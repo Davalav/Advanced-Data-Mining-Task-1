@@ -16,6 +16,7 @@ AAMI_MAPPING = {
     '/': 4, 'f': 4, 'Q': 4                   # Unknown / Paced / Artifacts
 }
 directory = "../mit-bih-arrhythmia-database-1.0.0/"
+train_val_split=0.7
 class MITBIHDataset(Dataset):
     """
     PyTorch Dataset for MIT-BIH Arrhythmia Database.
@@ -74,16 +75,22 @@ class MITBIHDataset(Dataset):
         return x, y
     
 # 1. Define train and validation record splits
-train_records = ['100', '101', '106', '108', '109']
-val_records   = ['118', '124']
+train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
+test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
 
+print("Train")
+print(train_val_records[:int(train_val_split*len(train_val_records))])
+print("Val")
+print(train_val_records[int(train_val_split*len(train_val_records)):])
 # 2. Instantiate PyTorch Datasets
-train_dataset = MITBIHDataset(record_list=train_records, window_size=256)
-val_dataset   = MITBIHDataset(record_list=val_records, window_size=256)
+train_dataset = MITBIHDataset(record_list=train_val_records[:int(train_val_split*len(train_val_records))], window_size=256)
+val_dataset   = MITBIHDataset(record_list=train_val_records[int(train_val_split*len(train_val_records)):], window_size=256)
+test_dataset   = MITBIHDataset(record_list=test_records, window_size=256)
 
 # 3. Create PyTorch DataLoaders
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 val_loader   = DataLoader(val_dataset, batch_size=64, shuffle=False)
+test_loader   = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
 # 4. Inspect batch shapes inside training loop
 for x_batch, y_batch in train_loader:
