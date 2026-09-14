@@ -6,7 +6,7 @@ import torchshow as ts
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-
+import time
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -21,6 +21,29 @@ AAMI_MAPPING = {
 }
 directory = "../mit-bih-arrhythmia-database-1.0.0/"
 train_val_split=0.7
+
+def format_seconds(seconds: float) -> str:
+    """
+    Convert a float number of seconds into a human-readable string.
+    Automatically scales from milliseconds up to days.
+    """
+    abs_seconds = abs(seconds)
+    sign = "-" if seconds < 0 else ""
+
+    if abs_seconds < 1e-3:
+        return f"{sign}{abs_seconds * 1e6:.3f} µs"
+    elif abs_seconds < 1:
+        return f"{sign}{abs_seconds * 1e3:.3f} ms"
+    elif abs_seconds < 60:
+        return f"{sign}{abs_seconds:.3f} s"
+    elif abs_seconds < 3600:
+        return f"{sign}{abs_seconds / 60:.3f} min"
+    elif abs_seconds < 86400:
+        return f"{sign}{abs_seconds / 3600:.3f} h"
+    else:
+        return f"{sign}{abs_seconds / 86400:.3f} days"
+
+
 class MITBIHDataset(Dataset):
     """
     PyTorch Dataset for MIT-BIH Arrhythmia Database.
@@ -172,6 +195,8 @@ def count_parameters(model):
     print(f"Total Trainable Params: {total_params}")
     return total_params
 
+
+
 # 1. Define train and validation record splits
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
 test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
@@ -219,12 +244,13 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 count_parameters(model)
 # Run Training Loop
-num_epochs = 5
+num_epochs = 20
 best_val_loss= 100
 val_loss_list = []
 val_acc_list=[]
 train_loss_list= []
 for epoch in range(num_epochs):
+    epoch_start_time = time.time()
     train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
     val_loss, val_acc   = evaluate(model, val_loader, criterion, device)
     val_acc_list.append(val_acc)
@@ -236,6 +262,11 @@ for epoch in range(num_epochs):
     print(f"Epoch {epoch:02d}/{num_epochs:02d} | "
             f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc * 100:.2f}% | "
             f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc * 100:.2f}%")
+    epoch_time = time.time() - epoch_start_time
+    print(f"Epoch execution time: {format_seconds(epoch_time)}")
+    num_epochs_left = num_epochs - epoch - 1
+    est_time_remaining = epoch_time * num_epochs_left
+    print(f"Estimated time remaining: {format_seconds(est_time_remaining)}")
 
 test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
 print(f"Final test | "
