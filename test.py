@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
+import copy
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -105,6 +106,7 @@ class MITBIHDataset(Dataset):
             # Extract valid beats
             for sample_idx, symbol in zip(annotation.sample, annotation.symbol):
                 if symbol not in AAMI_MAPPING:
+                    print("WARNING: INVALID BEAT: ["+ str(sample_idx)+"] "+ symbol)
                     continue
                 
                 start_idx = sample_idx - half_window
@@ -347,7 +349,7 @@ class FocalLoss(nn.Module):
 # Usage
 #criterion = FocalLoss(alpha=class_weights, gamma=2.0)
 
-optimizer = optim.Adam(model.parameters(), lr=0.0001)
+optimizer = optim.Adam(model.parameters(), lr=0.00005)
 count_parameters(model)
 # Run Training Loop
 num_epochs = 20
@@ -355,6 +357,10 @@ best_val_loss= 100
 val_loss_list = []
 val_acc_list=[]
 train_loss_list= []
+
+best_model = copy.deepcopy(model)
+
+
 for epoch in range(num_epochs):
     epoch_start_time = time.time()
     train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
@@ -365,6 +371,7 @@ for epoch in range(num_epochs):
     if(val_loss< best_val_loss):
         print("New best found!")
         best_val_loss= val_loss
+        best_model = copy.deepcopy(model)
     print(f"Epoch {epoch:02d}/{num_epochs:02d} | "
             f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc * 100:.2f}% | "
             f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc * 100:.2f}%")
@@ -373,6 +380,8 @@ for epoch in range(num_epochs):
     num_epochs_left = num_epochs - epoch - 1
     est_time_remaining = epoch_time * num_epochs_left
     print(f"Estimated time remaining: {format_seconds(est_time_remaining)}")
+    
+model = copy.deepcopy(best_model.to(device))
 
 test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
 print(f"Final test | "
