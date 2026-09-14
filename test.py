@@ -24,6 +24,33 @@ AAMI_MAPPING = {
 directory = "../mit-bih-arrhythmia-database-1.0.0/"
 train_val_split=0.7
 
+def compute_class_weights(labels, num_classes=5):
+    """
+    Computes balanced class weights inversely proportional to class frequencies.
+    
+    Formula: weight_i = total_samples / (num_classes * count_i)
+    """
+    # Count occurrences of each class index
+    class_counts = np.bincount(labels, minlength=num_classes)
+    total_samples = len(labels)
+    
+    # Calculate inverse frequency weights
+    # Prevent division by zero if a class has 0 samples
+    weights = []
+    for count in class_counts:
+        if count > 0:
+            w = total_samples / (num_classes * count)
+        else:
+            w = 1.0
+        weights.append(w)
+        
+    weights = np.array(weights, dtype=np.float32)
+    
+    # Optional: Normalize weights so their mean equals 1.0
+    weights = weights / np.mean(weights)
+    
+    return torch.tensor(weights, dtype=torch.float32)
+
 def format_seconds(seconds: float) -> str:
     """
     Convert a float number of seconds into a human-readable string.
@@ -231,14 +258,14 @@ def evaluate_and_plot_cm(model, dataloader, device):
     ))
 
     # 2. Compute Confusion Matrix via scikit-learn
-    cm = confusion_matrix(all_targets, all_preds, labels=range(len(CLASS_NAMES)))
+    cm = confusion_matrix(all_targets, all_preds, labels=range(len(CLASS_NAMES)), normalize='true')
 
     # 3. Plot Confusion Matrix Heatmap
     plt.figure(figsize=(8, 6))
     sns.heatmap(
         cm, 
         annot=True, 
-        fmt='d', 
+        fmt='.2%', 
         cmap='Blues',
         xticklabels=CLASS_NAMES,
         yticklabels=CLASS_NAMES
@@ -295,7 +322,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 # Initialize Model, Loss, and Optimizer
 model = ECG1DCNN(num_classes=5).to(device)
-criterion = nn.CrossEntropyLoss()
+
+class_weights = compute_class_weights(train_dataset.labels, num_classes=5)
+class_weights = class_weights.to(device)
+print("Computed Class Weights:")
+for i, w in enumerate(class_weights):
+    print(f"  Class {i}: {w.item():.4f}")
+
+# 3. Pass the weights directly into CrossEntropyLoss
+criterion = nn.CrossEntropyLoss(weight=class_weights)
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 count_parameters(model)
 # Run Training Loop
