@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import time
+from sklearn.metrics import classification_report, confusion_matrix
+import seaborn as sns
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -194,8 +196,61 @@ def count_parameters(model):
         total_params += params
     print(f"Total Trainable Params: {total_params}")
     return total_params
+CLASS_NAMES = ['Normal (N)', 'Supraventricular (S)', 'Ventricular (V)', 'Fusion (F)', 'Unknown (Q)']
+def evaluate_and_plot_cm(model, dataloader, device):
+    """
+    Evaluates the model on the test set, prints a classification report,
+    and displays an sklearn confusion matrix heatmap.
+    """
+    model.eval()
+    all_preds = []
+    all_targets = []
+    
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            
+            # Get class predictions (highest probability/logit index)
+            _, preds = torch.max(outputs, 1)
+            
+            all_preds.extend(preds.cpu().numpy())
+            all_targets.extend(labels.numpy())
+            
+    all_preds = np.array(all_preds)
+    all_targets = np.array(all_targets)
 
+    # 1. Print Detailed Metrics (Precision, Recall, F1-score)
+    print("\n--- Classification Report ---")
+    print(classification_report(
+        all_targets, 
+        all_preds, 
+        target_names=CLASS_NAMES, 
+        digits=4, 
+        zero_division=0
+    ))
 
+    # 2. Compute Confusion Matrix via scikit-learn
+    cm = confusion_matrix(all_targets, all_preds, labels=range(len(CLASS_NAMES)))
+
+    # 3. Plot Confusion Matrix Heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(
+        cm, 
+        annot=True, 
+        fmt='d', 
+        cmap='Blues',
+        xticklabels=CLASS_NAMES,
+        yticklabels=CLASS_NAMES
+    )
+    plt.title('MIT-BIH Classification Confusion Matrix')
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+    return cm
 
 # 1. Define train and validation record splits
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
@@ -271,6 +326,8 @@ for epoch in range(num_epochs):
 test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
 print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Test Acc: {test_acc * 100:.2f}%")
+
+cm =evaluate_and_plot_cm(model,test_loader,device)
 
 plt.plot(range(1,num_epochs+1),train_loss_list)
 plt.title('Training loss')
