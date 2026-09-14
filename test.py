@@ -331,6 +331,22 @@ for i, w in enumerate(class_weights):
 
 # 3. Pass the weights directly into CrossEntropyLoss
 criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2.0):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha  # Class weight tensor
+        self.gamma = gamma  # Focusing parameter (typically 2.0)
+
+    def forward(self, inputs, targets):
+        ce_loss = nn.functional.cross_entropy(inputs, targets, reduction='none', weight=self.alpha)
+        pt = torch.exp(-ce_loss)
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+        return focal_loss.mean()
+
+# Usage
+#criterion = FocalLoss(alpha=class_weights, gamma=2.0)
+
 optimizer = optim.Adam(model.parameters(), lr=0.0001)
 count_parameters(model)
 # Run Training Loop
