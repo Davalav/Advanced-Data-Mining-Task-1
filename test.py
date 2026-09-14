@@ -100,8 +100,8 @@ for x_batch, y_batch in train_loader:
     print(f"Target batch shape (Batch): {y_batch.shape}")                   # e.g., torch.Size([64])
     break
 name = '105'
-record = wfdb.rdrecord(directory+name)#, sampto=3600)  # First 10 seconds (360 Hz * 10s)
-annotation = wfdb.rdann(directory+name, 'atr')#, sampto=3600)
+record = wfdb.rdrecord(directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
+annotation = wfdb.rdann(directory+name, 'atr', sampto=3600)
 
 # 2. Plot signals with overlaid beat markers
 wfdb.plot_wfdb(
