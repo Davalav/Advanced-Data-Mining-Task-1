@@ -1,11 +1,12 @@
 import torch
-print(f"Python version: {torch.sys.version.split()[0]}")
-print(f"PyTorch version: {torch.__version__}")
-print(f"Is CUDA available? {torch.cuda.is_available()}")
-
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import wfdb
+import torchshow as ts
+
+print(f"Python version: {torch.sys.version.split()[0]}")
+print(f"PyTorch version: {torch.__version__}")
+print(f"Is CUDA available? {torch.cuda.is_available()}")
 
 # Mapping MIT-BIH symbols to standard 5 AAMI classes
 AAMI_MAPPING = {
@@ -82,6 +83,7 @@ print("Train")
 print(train_val_records[:int(train_val_split*len(train_val_records))])
 print("Val")
 print(train_val_records[int(train_val_split*len(train_val_records)):])
+
 # 2. Instantiate PyTorch Datasets
 train_dataset = MITBIHDataset(record_list=train_val_records[:int(train_val_split*len(train_val_records))], window_size=256)
 val_dataset   = MITBIHDataset(record_list=train_val_records[int(train_val_split*len(train_val_records)):], window_size=256)
@@ -97,3 +99,16 @@ for x_batch, y_batch in train_loader:
     print(f"Input batch shape (Batch, Channels, Window): {x_batch.shape}")  # e.g., torch.Size([64, 1, 256])
     print(f"Target batch shape (Batch): {y_batch.shape}")                   # e.g., torch.Size([64])
     break
+name = '105'
+record = wfdb.rdrecord(directory+name)#, sampto=3600)  # First 10 seconds (360 Hz * 10s)
+annotation = wfdb.rdann(directory+name, 'atr')#, sampto=3600)
+
+# 2. Plot signals with overlaid beat markers
+wfdb.plot_wfdb(
+    record=record, 
+    annotation=annotation,
+    plot_sym=True,
+    title="MIT-BIH Record "+name+" (Lead II & V1)",
+    time_units="seconds",
+    figsize=(12, 6)
+)
