@@ -115,6 +115,13 @@ class MITBIHDataset(Dataset):
                 # Boundary check
                 if start_idx >= 0 and end_idx < len(signal):
                     segment = signal[start_idx:end_idx]
+
+                    # Apply Z-score normalization to each window individually
+                    std = np.std(segment)
+                    if std > 0:
+                        segment = (segment - np.mean(segment)) / std
+                    else:
+                        segment = segment - np.mean(segment)
                     
                     self.beats.append(segment)
                     self.labels.append(AAMI_MAPPING[symbol])
@@ -332,7 +339,8 @@ for i, w in enumerate(class_weights):
     print(f"  Class {i}: {w.item():.4f}")
 
 # 3. Pass the weights directly into CrossEntropyLoss
-criterion = nn.CrossEntropyLoss(weight=class_weights)
+#criterion = nn.CrossEntropyLoss(weight=class_weights)
+#criterion = nn.CrossEntropyLoss()
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2.0):
@@ -347,7 +355,7 @@ class FocalLoss(nn.Module):
         return focal_loss.mean()
 
 # Usage
-#criterion = FocalLoss(alpha=class_weights, gamma=2.0)
+criterion = FocalLoss(alpha=class_weights, gamma=2.0)
 
 optimizer = optim.Adam(model.parameters(), lr=0.00005)
 count_parameters(model)
