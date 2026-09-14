@@ -4,6 +4,7 @@ from torch.utils.data import Dataset, DataLoader
 import wfdb
 import torchshow as ts
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import time
@@ -136,6 +137,7 @@ class MITBIHDataset(Dataset):
     def __getitem__(self, idx):
         # Shape output for PyTorch 1D Convolution: [Channels, Sequence_Length]
         x = torch.tensor(self.beats[idx], dtype=torch.float32).unsqueeze(0)
+        x = (x - x.mean()) / (x.std() + 1e-8)
         y = torch.tensor(self.labels[idx], dtype=torch.long)
         return x, y
     
@@ -189,6 +191,7 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
         outputs = model(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         
         running_loss += loss.item() * inputs.size(0)
@@ -330,7 +333,15 @@ wfdb.plot_wfdb(
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 # Initialize Model, Loss, and Optimizer
+
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.kaiming_normal_(m.weight, nonlinearity='relu')
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+
 model = ECG1DCNN(num_classes=5).to(device)
+model.apply(init_weights)
 
 class_weights = compute_class_weights(train_dataset.labels, num_classes=5)
 class_weights = class_weights.to(device)
@@ -354,13 +365,54 @@ class FocalLoss(nn.Module):
         focal_loss = ((1 - pt) ** self.gamma) * ce_loss
         return focal_loss.mean()
 
-# Usage
-criterion = FocalLoss(alpha=class_weights, gamma=2.0)
+class StableFocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+        """
+        Numerically stable Focal Loss using log_softmax.
+        
+        Args:
+            alpha (Tensor, optional): Class weights tensor of shape (num_classes,).
+            gamma (float): Focusing parameter (default 2.0).
+            reduction (str): 'mean', 'sum', or 'none'.
+        """
+        super(StableFocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
 
-optimizer = optim.Adam(model.parameters(), lr=0.00005)
+    def forward(self, inputs, targets):
+        # 1. Compute log probabilities safely
+        log_pt = F.log_softmax(inputs, dim=1)
+        
+        # 2. Extract log_pt for true class targets
+        log_pt = log_pt.gather(1, targets.unsqueeze(1)).squeeze(1)
+        pt = log_pt.exp()  # Convert back to probability safely
+
+        # 3. Compute Focal Loss formula: -alpha * (1 - pt)^gamma * log(pt)
+        focal_weight = (1.0 - pt) ** self.gamma
+        loss = -focal_weight * log_pt
+
+        # 4. Apply optional class alpha weights
+        if self.alpha is not None:
+            if self.alpha.device != inputs.device:
+                self.alpha = self.alpha.to(inputs.device)
+            at = self.alpha.gather(0, targets)
+            loss = loss * at
+
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        return loss
+
+# Usage
+class_weights = class_weights/class_weights.mean()
+criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
+
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
 count_parameters(model)
 # Run Training Loop
-num_epochs = 20
+num_epochs = 5
 best_val_loss= 100
 val_loss_list = []
 val_acc_list=[]
