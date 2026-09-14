@@ -5,6 +5,7 @@ import wfdb
 import torchshow as ts
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
@@ -159,6 +160,18 @@ def evaluate(model, dataloader, criterion, device):
     test_acc = correct / total
     return test_loss, test_acc
 
+def count_parameters(model):
+    print("Modules", "Parameters")
+    total_params = 0
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad:
+            continue
+        params = parameter.numel()
+        print(f"{name}: {params}")
+        total_params += params
+    print(f"Total Trainable Params: {total_params}")
+    return total_params
+
 # 1. Define train and validation record splits
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
 test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
@@ -203,14 +216,45 @@ print(f"Using device: {device}")
 # Initialize Model, Loss, and Optimizer
 model = ECG1DCNN(num_classes=5).to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
+optimizer = optim.Adam(model.parameters(), lr=0.0001)
+count_parameters(model)
 # Run Training Loop
-epochs = 5
-for epoch in range(1, epochs + 1):
+num_epochs = 5
+best_val_loss= 100
+val_loss_list = []
+val_acc_list=[]
+train_loss_list= []
+for epoch in range(num_epochs):
     train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
-    test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
-    
-    print(f"Epoch {epoch:02d}/{epochs:02d} | "
+    val_loss, val_acc   = evaluate(model, val_loader, criterion, device)
+    val_acc_list.append(val_acc)
+    val_loss_list.append(val_loss)
+    train_loss_list.append(train_loss)
+    if(val_loss< best_val_loss):
+        print("New best found!")
+        best_val_loss= val_loss
+    print(f"Epoch {epoch:02d}/{num_epochs:02d} | "
             f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc * 100:.2f}% | "
+            f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc * 100:.2f}%")
+
+test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
+print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Test Acc: {test_acc * 100:.2f}%")
+
+plt.plot(range(1,num_epochs+1),train_loss_list)
+plt.title('Training loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.show()
+    
+plt.plot(range(1,num_epochs+1),val_loss_list)
+plt.title('Validation loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.show()
+
+plt.plot(range(1,num_epochs+1),val_acc_list)
+plt.title('Validation accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.show()
