@@ -11,6 +11,8 @@ import time
 from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import copy
+from collections import Counter
+
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -107,7 +109,7 @@ class MITBIHDataset(Dataset):
             # Extract valid beats
             for sample_idx, symbol in zip(annotation.sample, annotation.symbol):
                 if symbol not in AAMI_MAPPING:
-                    print("WARNING: INVALID BEAT: ["+ str(sample_idx)+"] "+ symbol)
+                    #print("WARNING: INVALID BEAT: ["+ str(sample_idx)+"] "+ symbol)
                     continue
                 
                 start_idx = sample_idx - half_window
@@ -315,6 +317,30 @@ for x_batch, y_batch in train_loader:
     print(f"Input batch shape (Batch, Channels, Window): {x_batch.shape}")  # e.g., torch.Size([64, 1, 256])
     print(f"Target batch shape (Batch): {y_batch.shape}")                   # e.g., torch.Size([64])
     break
+
+
+def log_plot_balance(dataset):
+    counts = Counter(dataset.labels)
+    #print(counts[0])
+    counts = [counts[i] for i in range(len(CLASS_NAMES))]
+    #print(counts[0])
+    counts = counts / sum(counts)
+    # Skapa histogrammet
+    plt.bar(CLASS_NAMES,counts, color='skyblue', edgecolor='black', log=True)
+    # Lägg till titlar och etiketter
+    plt.title('Grundläggande Histogram')
+    plt.xlabel('Värden')
+    plt.ylabel('Frekvens')
+    plt.show()
+
+
+log_plot_balance(train_dataset)
+log_plot_balance(val_dataset)
+log_plot_balance(test_dataset)
+
+
+
+
 name = '105'
 record = wfdb.rdrecord(directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
 annotation = wfdb.rdann(directory+name, 'atr', sampto=3600)
