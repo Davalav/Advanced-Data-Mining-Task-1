@@ -3,6 +3,8 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import wfdb
 import torchshow as ts
+import torch.nn as nn
+import torch.optim as optim
 
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
@@ -75,6 +77,88 @@ class MITBIHDataset(Dataset):
         y = torch.tensor(self.labels[idx], dtype=torch.long)
         return x, y
     
+class ECG1DCNN(nn.Module):
+    def __init__(self, num_classes=5):
+        super(ECG1DCNN, self).__init__()
+        
+        # Feature extractor
+        self.features = nn.Sequential(
+            # Block 1: [Batch, 1, 256] -> [Batch, 32, 128]
+            nn.Conv1d(in_channels=1, out_channels=32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2),
+            
+            # Block 2: [Batch, 32, 128] -> [Batch, 64, 64]
+            nn.Conv1d(in_channels=32, out_channels=64, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2),
+            
+            # Block 3: [Batch, 64, 64] -> [Batch, 128, 32]
+            nn.Conv1d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2)
+        )
+        
+        # Classifier head
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(128 * 32, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(128, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+
+def train_epoch(model, dataloader, criterion, optimizer, device):
+    model.train()
+    running_loss, correct, total = 0.0, 0, 0
+    
+    for inputs, labels in dataloader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        
+        optimizer.zero_grad()
+        outputs = model(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        
+        running_loss += loss.item() * inputs.size(0)
+        _, preds = torch.max(outputs, 1)
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
+        
+    epoch_loss = running_loss / total
+    epoch_acc = correct / total
+    return epoch_loss, epoch_acc
+
+
+def evaluate(model, dataloader, criterion, device):
+    model.eval()
+    running_loss, correct, total = 0.0, 0, 0
+    
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            
+            running_loss += loss.item() * inputs.size(0)
+            _, preds = torch.max(outputs, 1)
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+            
+    test_loss = running_loss / total
+    test_acc = correct / total
+    return test_loss, test_acc
+
 # 1. Define train and validation record splits
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
 test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
@@ -112,3 +196,21 @@ wfdb.plot_wfdb(
     time_units="seconds",
     figsize=(12, 6)
 )
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+# Initialize Model, Loss, and Optimizer
+model = ECG1DCNN(num_classes=5).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# Run Training Loop
+epochs = 5
+for epoch in range(1, epochs + 1):
+    train_loss, train_acc = train_epoch(model, train_loader, criterion, optimizer, device)
+    test_loss, test_acc   = evaluate(model, test_loader, criterion, device)
+    
+    print(f"Epoch {epoch:02d}/{epochs:02d} | "
+            f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc * 100:.2f}% | "
+            f"Test Loss: {test_loss:.4f} - Test Acc: {test_acc * 100:.2f}%")
