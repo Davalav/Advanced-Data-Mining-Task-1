@@ -127,9 +127,11 @@ class StableFocalLoss(nn.Module):
 
 # Usage
 class_weights = class_weights/class_weights.mean()
-criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
-#criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-5)
+#criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
+#class_weights[3]=0
+#criterion_val = StableFocalLoss(alpha=class_weights, gamma=1.0)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 lib.count_parameters(model)
 # Run Training Loop
 num_epochs = 20
@@ -148,7 +150,7 @@ try:
         val_acc_list.append(val_acc)
         val_loss_list.append(val_loss)
         train_loss_list.append(train_loss)
-        if(val_loss< best_val_loss):
+        if(val_loss< best_val_loss or True):
             print("New best found!")
             best_epoch=epoch
             best_val_loss= val_loss

@@ -3,7 +3,7 @@ import numpy as np
 import lib
 records =lib.train_val_records
 
-NUM_CLASSES = 5
+NUM_CLASSES = 4
 
 
 
@@ -87,7 +87,7 @@ def score_split(train_records):
 # ---------------------------------------------------
 # Search all 80/20 splits
 # ---------------------------------------------------
-split=0.91
+split=0.9
 n_train = int(round(len(records) * split))
 
 best_score = float("inf")
