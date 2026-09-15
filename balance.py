@@ -12,7 +12,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import copy
 from collections import Counter
-
+import lib
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -143,3 +143,17 @@ def print_plot_balance(dataset):
 for i in range(len(train_val_records)):
     temp = MITBIHDataset(record_list=[train_val_records[i]], window_size=256)
     print_plot_balance(temp)
+
+name = '105'
+record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
+annotation = wfdb.rdann(lib.directory+name, 'atr', sampto=3600)
+
+# 2. Plot signals with overlaid beat markers
+wfdb.plot_wfdb(
+    record=record, 
+    annotation=annotation,
+    plot_sym=True,
+    title="MIT-BIH Record "+name+" (Lead II & V1)",
+    time_units="seconds",
+    figsize=(12, 6)
+)

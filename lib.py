@@ -19,9 +19,11 @@ AAMI_MAPPING = {
     'N': 0, 'L': 0, 'R': 0, 'e': 0, 'j': 0,  # Normal / Non-ectopic
     'A': 1, 'a': 1, 'J': 1, 'S': 1,          # Supraventricular Ectopic
     'V': 2, 'E': 2,                          # Ventricular Ectopic
-    'F': 3,                                  # Fusion Beat
-    '/': 4, 'f': 4, 'Q': 4                   # Unknown / Paced / Artifacts
+    'F': 3#,                                  # Fusion Beat
+    #'/': 4, 'f': 4, 'Q': 4                   # Unknown / Paced / Artifacts
 }
+CLASS_NAMES = ['Normal (N)', 'Supraventricular (S)', 'Ventricular (V)', 'Fusion (F)']#, 'Unknown (Q)']
+
 directory = "../mit-bih-arrhythmia-database-1.0.0/"
 
 def compute_class_weights(labels, num_classes=5):
@@ -135,7 +137,6 @@ class MITBIHDataset(Dataset):
     def __getitem__(self, idx):
         # Shape output for PyTorch 1D Convolution: [Channels, Sequence_Length]
         x = torch.tensor(self.beats[idx], dtype=torch.float32).unsqueeze(0)
-        x = (x - x.mean()) / (x.std() + 1e-8)
         y = torch.tensor(self.labels[idx], dtype=torch.long)
         return x, y
     
@@ -233,7 +234,6 @@ def count_parameters(model):
         total_params += params
     print(f"Total Trainable Params: {total_params}")
     return total_params
-CLASS_NAMES = ['Normal (N)', 'Supraventricular (S)', 'Ventricular (V)', 'Fusion (F)', 'Unknown (Q)']
 def evaluate_and_plot_cm(model, dataloader, device):
     """
     Evaluates the model on the test set, prints a classification report,
@@ -310,5 +310,10 @@ def log_plot_balance(dataset):
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
 test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
 
+# best 80% split
 train_records = ['101', '106', '108', '109', '114', '115', '116', '118', '119', '122', '124', '203', '207', '208', '209', '215', '220', '230']
 val_records =['112', '201', '205', '223']
+
+# best 90% split
+#train_records = ['101', '106', '108', '109', '112', '114', '115', '118', '119', '122', '124', '201', '203', '205', '208', '209', '215', '220', '223', '230']
+#val_records = ['116', '207']
