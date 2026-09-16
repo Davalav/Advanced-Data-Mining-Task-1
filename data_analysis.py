@@ -50,12 +50,12 @@ def beat_plot(dataset,target_label):
 
     for i in indices:
         signal = dataset[i][0][0]
-        if(signal.max() < torch.abs(signal.min())):
-            signal = -signal
-        plt.plot(range(len(signal)),signal, color='blue',alpha=0.2)        
+        #if(signal.max() < torch.abs(signal.min())):
+            #signal = -signal
+        plt.plot(range(len(signal)),signal, color='blue',alpha=0.1)        
 
 
-beat_plot(test_dataset,0)
+beat_plot(test_dataset,2)
 
 name = '101'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
