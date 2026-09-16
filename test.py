@@ -77,6 +77,7 @@ def init_weights(m):
             nn.init.constant_(m.bias, 0)
 
 model = lib.ECG1DCNN(num_classes=4).to(device)
+model = lib.ECG_model_nature(num_classes=4).to(device)
 model.apply(init_weights)
 
 class_weights = lib.compute_class_weights(train_dataset.labels, num_classes=4)

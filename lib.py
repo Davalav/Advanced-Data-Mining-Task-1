@@ -181,12 +181,326 @@ class ECG1DCNN(nn.Module):
         return x
 
 class ECG_model_nature(nn.Module):
-    def __init__(self, num_classes=5):
-        super(ECG_model_nature, self).__init__()
-        # Feature extractor
-        self.features = nn.Sequential(
-            nn.Conv1d
+    def __init__(
+        self,
+        input_size,
+        num_classes=6,
+        filter_length=64,
+        kernel_size=16,
+        drop_rate=0.2
+    ):
+        super(ECG1DCNN, self).__init__()
+
+        self.input_size = input_size
+        self.num_classes = num_classes
+        self.filter_length = filter_length
+        self.kernel_size = kernel_size
+        self.drop_rate = drop_rate
+
+        # ============================================================
+        # Block 1: First convolutional residual block
+        # ============================================================
+        self.first_block = nn.Sequential(
+            nn.Conv1d(
+                in_channels=1,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=kernel_size // 2
+            ),
+            nn.BatchNorm1d(filter_length),
+            nn.ReLU(),
+
+            nn.Conv1d(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=kernel_size // 2
+            ),
+            nn.BatchNorm1d(filter_length),
+            nn.ReLU(),
+
+            nn.Dropout(drop_rate),
+
+            nn.Conv1d(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=1,
+                padding=kernel_size // 2
+            )
         )
+
+        # ============================================================
+        # Block 2: Main residual blocks
+        # ============================================================
+        self.main_blocks = nn.Sequential(
+            # Block 0: 64 -> 64, stride 2
+            ResidualBlock(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 1: 64 -> 64, stride 1
+            ResidualBlock(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 2: 64 -> 64, stride 2
+            ResidualBlock(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 3: 64 -> 64, stride 1
+            ResidualBlock(
+                in_channels=filter_length,
+                out_channels=filter_length,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 4: 64 -> 128, stride 2
+            ResidualBlock(
+                in_channels=filter_length,
+                out_channels=filter_length * 2,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 5: 128 -> 128, stride 1
+            ResidualBlock(
+                in_channels=filter_length * 2,
+                out_channels=filter_length * 2,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 6: 128 -> 128, stride 2
+            ResidualBlock(
+                in_channels=filter_length * 2,
+                out_channels=filter_length * 2,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 7: 128 -> 128, stride 1
+            ResidualBlock(
+                in_channels=filter_length * 2,
+                out_channels=filter_length * 2,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 8: 128 -> 256, stride 2
+            ResidualBlock(
+                in_channels=filter_length * 2,
+                out_channels=filter_length * 4,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 9: 256 -> 256, stride 1
+            ResidualBlock(
+                in_channels=filter_length * 4,
+                out_channels=filter_length * 4,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 10: 256 -> 256, stride 2
+            ResidualBlock(
+                in_channels=filter_length * 4,
+                out_channels=filter_length * 4,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 11: 256 -> 256, stride 1
+            ResidualBlock(
+                in_channels=filter_length * 4,
+                out_channels=filter_length * 4,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 12: 256 -> 512, stride 2
+            ResidualBlock(
+                in_channels=filter_length * 4,
+                out_channels=filter_length * 8,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+
+            # Block 13: 512 -> 512, stride 1
+            ResidualBlock(
+                in_channels=filter_length * 8,
+                out_channels=filter_length * 8,
+                kernel_size=kernel_size,
+                stride=1,
+                drop_rate=drop_rate
+            ),
+
+            # Block 14: 512 -> 512, stride 2
+            ResidualBlock(
+                in_channels=filter_length * 8,
+                out_channels=filter_length * 8,
+                kernel_size=kernel_size,
+                stride=2,
+                drop_rate=drop_rate
+            ),
+        )
+
+        # ============================================================
+        # Block 3: Output block
+        # ============================================================
+        self.output_block = nn.Sequential(
+            nn.BatchNorm1d(filter_length * 8),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
+
+        # Calculate final flattened size
+        final_length = input_size
+
+        # 8 blocks have stride=2
+        for _ in range(8):
+            final_length = final_length // 2
+
+        self.classifier = nn.Linear(
+            filter_length * 8 * final_length,
+            num_classes
+        )
+
+        self._initialize_weights()
+
+    def forward(self, x):
+
+        # Keras: (batch, length, channels)
+        # PyTorch: (batch, channels, length)
+        if x.ndim == 3 and x.shape[-1] == 1:
+            x = x.transpose(1, 2)
+
+        # ------------------------------------------------------------
+        # Block 1
+        # ------------------------------------------------------------
+        shortcut = x
+        x = self.first_block(x)
+
+        # pool_size=1, stride=1 is an identity operation
+        x = shortcut + x
+
+        # ------------------------------------------------------------
+        # Block 2
+        # ------------------------------------------------------------
+        x = self.main_blocks(x)
+
+        # ------------------------------------------------------------
+        # Block 3
+        # ------------------------------------------------------------
+        x = self.output_block(x)
+
+        x = self.classifier(x)
+
+        return x
+
+
+class ResidualBlock(nn.Module):
+    """
+    One residual block used inside main_blocks.
+    """
+
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        drop_rate
+    ):
+        super(ResidualBlock, self).__init__()
+
+        padding = kernel_size // 2
+
+        self.bn1 = nn.BatchNorm1d(in_channels)
+
+        self.conv1 = nn.Conv1d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding
+        )
+
+        self.bn2 = nn.BatchNorm1d(out_channels)
+
+        self.dropout = nn.Dropout(drop_rate)
+
+        self.conv2 = nn.Conv1d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=1,
+            padding=padding
+        )
+
+        # Shortcut
+        self.pool = nn.MaxPool1d(
+            kernel_size=stride,
+            stride=stride
+        )
+
+        if in_channels != out_channels:
+            self.channel_pad = nn.ZeroPad2d(
+                (0, 0, 0, out_channels - in_channels)
+            )
+        else:
+            self.channel_pad = nn.Identity()
+
+    def forward(self, x):
+
+        # Shortcut
+        shortcut = self.pool(x)
+
+        if isinstance(self.channel_pad, nn.ZeroPad2d):
+            shortcut = self.channel_pad(shortcut)
+
+        # Main branch
+        out = self.bn1(x)
+        out = F.relu(out)
+
+        out = self.conv1(out)
+
+        out = self.bn2(out)
+        out = F.relu(out)
+
+        out = self.dropout(out)
+
+        out = self.conv2(out)
+
+        # Residual addition
+        return shortcut + out
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
     model.train()
