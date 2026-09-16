@@ -13,6 +13,8 @@ import seaborn as sns
 import copy
 from collections import Counter
 import lib
+from torch.utils.data import WeightedRandomSampler
+
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -30,7 +32,20 @@ val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=256)
 test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=256)
 
 # 3. Create PyTorch DataLoaders
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
+labels = train_dataset.labels
+
+class_counts = np.bincount(labels)
+
+sample_weights = 1.0 / class_counts[labels]
+
+sampler = WeightedRandomSampler(
+sample_weights,
+len(sample_weights),
+replacement=True
+)
+
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, sampler=sampler)
 val_loader   = DataLoader(val_dataset, batch_size=64, shuffle=False)
 test_loader   = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
@@ -62,7 +77,7 @@ def init_weights(m):
             nn.init.constant_(m.bias, 0)
 
 model = lib.ECG1DCNN(num_classes=4).to(device)
-#model.apply(init_weights)
+model.apply(init_weights)
 
 class_weights = lib.compute_class_weights(train_dataset.labels, num_classes=4)
 class_weights = class_weights.to(device)
@@ -134,7 +149,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 lib.count_parameters(model)
 # Run Training Loop
-num_epochs = 20
+num_epochs = 30
 best_val_loss= 100
 val_loss_list = []
 val_acc_list=[]
@@ -166,13 +181,17 @@ try:
 except KeyboardInterrupt:
     print("\nProgram terminated by user.\nSkipping to testing")
 print(f"Best model was found at epoch: {best_epoch}/{num_epochs}")
+
+
 model = copy.deepcopy(best_model.to(device))
+cm =lib.evaluate_and_plot_cm(model,train_loader,device)
 current_time = time.strftime("%Y-%m-%d %H_%M_%S")
 test_loss, test_acc   = lib.evaluate(model, test_loader, criterion, device)
 torch.save(model.state_dict(), f"models/{model.__class__.__name__}-{val_acc:.4f}-{test_acc:.4f}-{best_epoch},{num_epochs}_{current_time}.pth")
 
 print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Test Acc: {test_acc * 100:.2f}%")
+
 
 cm =lib.evaluate_and_plot_cm(model,test_loader,device)
 
