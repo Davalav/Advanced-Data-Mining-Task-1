@@ -17,11 +17,11 @@ from torch.utils.data import WeightedRandomSampler
 
 
 
+window_size = 64
 
-
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=64)
-val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=256)
-test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=256)
+train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size)
+val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size)
+test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size)
 
 
 def log_plot_balance(dataset):
@@ -40,17 +40,29 @@ def log_plot_balance(dataset):
     plt.xlabel('Labels')
     plt.ylabel('Procent')
     plt.show()
-    
+
+def beat_plot(dataset,target_label):
+    all_labels = torch.tensor([label for _, label in dataset])
+
+    # 2. Find indices for your target label
+    indices = (all_labels == target_label).nonzero(as_tuple=True)[0]
+
+
+    for i in indices:
+        signal = dataset[i][0][0]
+        if(signal.max() < torch.abs(signal.min())):
+            signal = -signal
+        plt.plot(range(len(signal)),signal, color='blue',alpha=0.2)        
+
+
+beat_plot(test_dataset,0)
 
 name = '101'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
 annotation = wfdb.rdann(lib.directory+name, 'atr', sampto=3600)
 
 
-signal = train_dataset[5][0][0]
 
-
-plt.plot(range(len(signal)),signal, color='skyblue')
 # Lägg till titlar och etiketter
 plt.title('Frequency of labels')
 plt.xlabel('Labels')
