@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import time
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import seaborn as sns
 import copy
 from collections import Counter
@@ -234,6 +234,27 @@ def count_parameters(model):
         total_params += params
     print(f"Total Trainable Params: {total_params}")
     return total_params
+def f1_calc(model, dataloader, device):
+    model.eval()
+    all_preds = []
+    all_targets = []
+    
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            
+            # Get class predictions (highest probability/logit index)
+            _, preds = torch.max(outputs, 1)
+            
+            all_preds.extend(preds.cpu().numpy())
+            all_targets.extend(labels.numpy())
+            
+    all_preds = np.array(all_preds)
+    all_targets = np.array(all_targets)
+    return f1_score(all_targets, all_preds,average='macro')
+    
+    
 def evaluate_and_plot_cm(model, dataloader, device):
     """
     Evaluates the model on the test set, prints a classification report,

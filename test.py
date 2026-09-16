@@ -37,7 +37,7 @@ labels = train_dataset.labels
 
 class_counts = np.bincount(labels)
 
-sample_weights = 1.0 / class_counts[labels]
+sample_weights = 1.0 / np.sqrt(class_counts[labels])
 
 sampler = WeightedRandomSampler(
 sample_weights,
@@ -146,14 +146,16 @@ class_weights = class_weights/class_weights.mean()
 #class_weights[3]=0
 #criterion_val = StableFocalLoss(alpha=class_weights, gamma=1.0)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4,weight_decay=1e-4)
 lib.count_parameters(model)
 # Run Training Loop
-num_epochs = 30
+num_epochs = 5
 best_val_loss= 100
+best_val_f1 = 0
 val_loss_list = []
 val_acc_list=[]
 train_loss_list= []
+val_f1_list=[]
 
 best_model = copy.deepcopy(model)
 best_epoch=-1
@@ -165,14 +167,18 @@ try:
         val_acc_list.append(val_acc)
         val_loss_list.append(val_loss)
         train_loss_list.append(train_loss)
-        if(val_loss< best_val_loss):
+        
+        val_f1 = lib.f1_calc(model,val_loader,device)
+        val_f1_list.append(val_f1)
+        if(best_val_f1< val_f1):
             print("New best found!")
             best_epoch=epoch
             best_val_loss= val_loss
+            best_val_f1 = val_f1
             best_model = copy.deepcopy(model)
         print(f"Epoch {epoch:02d}/{num_epochs:02d} | "
                 f"Train Loss: {train_loss:.4f} - Train Acc: {train_acc * 100:.2f}% | "
-                f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc * 100:.2f}%")
+                f"Val Loss: {val_loss:.4f} - Val Acc: {val_acc * 100:.2f}% - Val F1 Macro {val_f1*100:.2f}%")
         epoch_time = time.time() - epoch_start_time
         print(f"Epoch execution time: {lib.format_seconds(epoch_time)}")
         num_epochs_left = num_epochs - epoch - 1
@@ -192,7 +198,7 @@ torch.save(model.state_dict(), f"models/{model.__class__.__name__}-{val_acc:.4f}
 print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Test Acc: {test_acc * 100:.2f}%")
 
-
+print("Training dataset CM")
 cm =lib.evaluate_and_plot_cm(model,test_loader,device)
 
 plt.plot(range(1,len(train_loss_list)+1),train_loss_list)
@@ -211,4 +217,10 @@ plt.plot(range(1,len(val_acc_list)+1),val_acc_list)
 plt.title('Validation accuracy')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
+plt.show()
+
+plt.plot(range(1,len(val_f1_list)+1),val_f1_list)
+plt.title('Validation F1 Macro')
+plt.xlabel('Epochs')
+plt.ylabel('F1 score')
 plt.show()
