@@ -167,8 +167,9 @@ class ECG1DCNN(nn.Module):
         
         # Classifier head
         self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool1d(1),
             nn.Flatten(),
-            nn.Linear(128 * 32, 128),
+            nn.Linear(128,128),
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(128, num_classes)
@@ -178,6 +179,14 @@ class ECG1DCNN(nn.Module):
         x = self.features(x)
         x = self.classifier(x)
         return x
+
+class ECG_model_nature(nn.Module):
+    def __init__(self, num_classes=5):
+        super(ECG_model_nature, self).__init__()
+        # Feature extractor
+        self.features = nn.Sequential(
+            nn.Conv1d
+        )
 
 def train_epoch(model, dataloader, criterion, optimizer, device):
     model.train()
