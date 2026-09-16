@@ -150,7 +150,7 @@ try:
         val_acc_list.append(val_acc)
         val_loss_list.append(val_loss)
         train_loss_list.append(train_loss)
-        if(val_loss< best_val_loss or True):
+        if(val_loss< best_val_loss):
             print("New best found!")
             best_epoch=epoch
             best_val_loss= val_loss

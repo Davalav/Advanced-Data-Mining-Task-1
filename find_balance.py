@@ -87,7 +87,7 @@ def score_split(train_records):
 # ---------------------------------------------------
 # Search all 80/20 splits
 # ---------------------------------------------------
-split=0.9
+split=0.8
 n_train = int(round(len(records) * split))
 
 best_score = float("inf")
