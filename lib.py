@@ -12,6 +12,25 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import seaborn as sns
 import copy
 from collections import Counter
+import scipy.signal as sp
+
+
+# Specify cutoff in Hertz
+lpf_cutoff = 0.5 
+hpf_cutoff = 20
+
+# 2. Funktion för Bandpassfilter (Högpass + Lågpass kombinerat)
+def butter_bandpass_filter(data, cutoff_low, cutoff_high, fs, order=4):
+    nyq = 0.5 * fs
+    # Normalisera båda brytfrekvenserna som en lista [low, high]
+    normal_cutoff = [cutoff_low / nyq, cutoff_high / nyq]
+
+    # btype='bandpass' skapar både högpass och lågpass samtidigt
+    sos = sp.butter(order, normal_cutoff, btype="bandpass", analog=False, output="sos")
+
+    # Filtrera med nollfasförskjutning
+    filtered_data = sp.sosfiltfilt(sos, data)
+    return filtered_data
 
 
 # Mapping MIT-BIH symbols to standard 5 AAMI classes
@@ -103,20 +122,24 @@ class MITBIHDataset(Dataset):
             annotation = wfdb.rdann(directory+record_name, 'atr')
             
             signal = record.p_signal[:, self.channel]
-            
+            signal = butter_bandpass_filter(signal,lpf_cutoff,hpf_cutoff,record.fs)
+
+            last_sample_idx=-self.window_size
             # Extract valid beats
             for sample_idx, symbol in zip(annotation.sample, annotation.symbol):
                 if symbol not in AAMI_MAPPING:
                     #print("WARNING: INVALID BEAT: ["+ str(sample_idx)+"] "+ symbol)
                     continue
-                
+                if last_sample_idx + self.window_size > sample_idx:
+                    print("Too close beats")
                 start_idx = sample_idx - half_window
                 end_idx = sample_idx + half_window
-                
+                last_sample_idx = sample_idx
                 # Boundary check
                 if start_idx >= 0 and end_idx < len(signal):
                     segment = signal[start_idx:end_idx]
 
+                    
                     # Apply Z-score normalization to each window individually
                     std = np.std(segment)
                     if std > 0:

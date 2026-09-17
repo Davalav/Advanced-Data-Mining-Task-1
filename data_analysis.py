@@ -19,9 +19,9 @@ from torch.utils.data import WeightedRandomSampler
 
 window_size = 64
 
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size)
-val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size)
-test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size)
+train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0)
+val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0)
+test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0)
 
 
 def log_plot_balance(dataset):
@@ -37,8 +37,8 @@ def log_plot_balance(dataset):
     plt.bar(lib.CLASS_NAMES,counts, color='skyblue', edgecolor='black', log=True)
     # Lägg till titlar och etiketter
     plt.title('Frequency of labels')
-    plt.xlabel('Labels')
-    plt.ylabel('Procent')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Amplitude (mV)')
     plt.show()
 
 def beat_plot(dataset,target_label):
@@ -47,15 +47,15 @@ def beat_plot(dataset,target_label):
     # 2. Find indices for your target label
     indices = (all_labels == target_label).nonzero(as_tuple=True)[0]
 
-
+    print(f"Samples: {len(indices)}")
     for i in indices:
         signal = dataset[i][0][0]
         #if(signal.max() < torch.abs(signal.min())):
             #signal = -signal
-        plt.plot(range(len(signal)),signal, color='blue',alpha=0.1)        
+        plt.plot(range(len(signal)),signal, color='blue',alpha=max(20/len(indices),0.01))        
 
 
-beat_plot(test_dataset,2)
+beat_plot(test_dataset,3)
 
 name = '101'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
