@@ -33,6 +33,14 @@ def butter_bandpass_filter(data, cutoff_low, cutoff_high, fs, order=4):
     return filtered_data
 
 
+def notch_filter(data, notch_freq,fs, quality_factor=30.0):
+    # Calculate filter coefficients
+    b, a = sp.iirnotch(notch_freq, quality_factor, fs)
+
+    # 3. Apply the filter using zero-phase filtering (filtfilt) to prevent time shifts
+    filtered_signal = sp.filtfilt(b, a, data)
+    return filtered_signal
+
 # Mapping MIT-BIH symbols to standard 5 AAMI classes
 AAMI_MAPPING = {
     'N': 0, 'L': 0, 'R': 0, 'e': 0, 'j': 0,  # Normal / Non-ectopic
