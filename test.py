@@ -15,6 +15,8 @@ from collections import Counter
 import lib
 from torch.utils.data import WeightedRandomSampler
 
+window_size=64
+
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -27,9 +29,9 @@ print(f"Is CUDA available? {torch.cuda.is_available()}")
 #print(lib.train_val_records[int(lib.train_val_split*len(lib.train_val_records)):])
 
 # 2. Instantiate PyTorch Datasets
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=256)
-val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=256)
-test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=256)
+train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size)
+val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size)
+test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size)
 
 # 3. Create PyTorch DataLoaders
 
@@ -77,7 +79,7 @@ def init_weights(m):
             nn.init.constant_(m.bias, 0)
 
 model = lib.ECG1DCNN(num_classes=4).to(device)
-model = lib.ECG_model_nature(num_classes=4).to(device)
+#model = lib.ECG_model_nature(num_classes=4).to(device)
 model.apply(init_weights)
 
 class_weights = lib.compute_class_weights(train_dataset.labels, num_classes=4)
@@ -150,7 +152,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-4,weight_decay=1e-4)
 lib.count_parameters(model)
 # Run Training Loop
-num_epochs = 30
+num_epochs = 5
 best_val_loss= 100
 best_val_f1 = 0
 val_loss_list = []
@@ -191,8 +193,8 @@ print(f"Best model was found at epoch: {best_epoch}/{num_epochs}")
 
 
 model = copy.deepcopy(best_model.to(device))
-cm =lib.evaluate_and_plot_cm(model,train_loader,device)
-cm =lib.evaluate_and_plot_cm(model,val_loader,device)
+cm =lib.evaluate_and_plot_cm(model,train_loader,device, "Training")
+cm =lib.evaluate_and_plot_cm(model,val_loader,device, "Validation")
 current_time = time.strftime("%Y-%m-%d %H_%M_%S")
 test_loss, test_acc   = lib.evaluate(model, test_loader, criterion, device)
 torch.save(model.state_dict(), f"models/{model.__class__.__name__}-{val_acc:.4f}-{test_acc:.4f}-{best_epoch},{num_epochs}_{current_time}.pth")
@@ -204,7 +206,7 @@ print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Acc: {test_acc * 100:.2f}% - F1 Macro {test_f1*100:.2f}%")
 
 print("Training dataset CM")
-cm =lib.evaluate_and_plot_cm(model,test_loader,device)
+cm =lib.evaluate_and_plot_cm(model,test_loader,device, "Testing")
 
 plt.plot(range(1,len(train_loss_list)+1),train_loss_list)
 plt.title('Training loss')

@@ -107,7 +107,7 @@ class MITBIHDataset(Dataset):
     PyTorch Dataset for MIT-BIH Arrhythmia Database.
     Extracts 1D ECG beat segments centered on annotated R-peaks.
     """
-    def __init__(self, record_list, window_size=256, channel=0):
+    def __init__(self, record_list, window_size=256, channel=0, offset=0):
         """
         Args:
             record_list (list): List of record IDs, e.g., ['100', '101', '102'].
@@ -118,6 +118,7 @@ class MITBIHDataset(Dataset):
         self.channel = channel
         self.beats = []
         self.labels = []
+        self.offset = offset
         
         self._load_data(record_list)
 
@@ -131,6 +132,7 @@ class MITBIHDataset(Dataset):
             
             signal = record.p_signal[:, self.channel]
             signal = butter_bandpass_filter(signal,lpf_cutoff,hpf_cutoff,record.fs)
+            signal = notch_filter(signal, 50, record.fs)
 
             last_sample_idx=-self.window_size
             # Extract valid beats
@@ -140,8 +142,8 @@ class MITBIHDataset(Dataset):
                     continue
                 if last_sample_idx + self.window_size > sample_idx:
                     print("Too close beats")
-                start_idx = sample_idx - half_window
-                end_idx = sample_idx + half_window
+                start_idx = sample_idx - half_window + self.offset
+                end_idx = sample_idx + half_window + self.offset
                 last_sample_idx = sample_idx
                 # Boundary check
                 if start_idx >= 0 and end_idx < len(signal):
@@ -609,7 +611,7 @@ def f1_calc(model, dataloader, device):
     return f1_score(all_targets, all_preds,average='macro')
     
     
-def evaluate_and_plot_cm(model, dataloader, device):
+def evaluate_and_plot_cm(model, dataloader, device, name):
     """
     Evaluates the model on the test set, prints a classification report,
     and displays an sklearn confusion matrix heatmap.
@@ -633,7 +635,7 @@ def evaluate_and_plot_cm(model, dataloader, device):
     all_targets = np.array(all_targets)
 
     # 1. Print Detailed Metrics (Precision, Recall, F1-score)
-    print("\n--- Classification Report ---")
+    print(f"\n--- Classification Report {name} dataset ---")
     print(classification_report(
         all_targets, 
         all_preds, 
@@ -655,7 +657,7 @@ def evaluate_and_plot_cm(model, dataloader, device):
         xticklabels=CLASS_NAMES,
         yticklabels=CLASS_NAMES
     )
-    plt.title('MIT-BIH Classification Confusion Matrix')
+    plt.title(f'MIT-BIH {name} Classification Confusion Matrix')
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
     plt.xticks(rotation=45, ha='right')
