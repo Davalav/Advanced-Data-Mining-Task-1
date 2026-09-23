@@ -13,12 +13,10 @@ import seaborn as sns
 import copy
 from collections import Counter
 import scipy.signal as sp
-from ecgdetectors import Detectors
 
 # Specify cutoff in Hertz
 lpf_cutoff = 0.5 
 hpf_cutoff = 20
-detectors = Detectors(360)
 # 2. Funktion för Bandpassfilter (Högpass + Lågpass kombinerat)
 def butter_bandpass_filter(data, cutoff_low, cutoff_high, fs, order=4):
     nyq = 0.5 * fs
@@ -119,6 +117,7 @@ class MITBIHDataset(Dataset):
         self.beats = []
         self.labels = []
         self.offset = offset
+        self.signals = []
         
         self._load_data(record_list)
 
@@ -136,7 +135,7 @@ class MITBIHDataset(Dataset):
 
             last_sample_idx=-self.window_size
             
-            r_peaks = detectors.hamilton_detector(signal)
+            self.signals.append(signal)
             
             # Extract valid beats
             for sample_idx, symbol in zip(annotation.sample, annotation.symbol):

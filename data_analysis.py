@@ -14,16 +14,17 @@ import copy
 from collections import Counter
 import lib
 from torch.utils.data import WeightedRandomSampler
-
-
-
+from ecgdetectors import Detectors
+import time
+start_time=time.time()
+time_a= time.time()
 window_size = 64
 offset = 1
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset)
 val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset)
 test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset)
-
-
+elapsed_time=time.time()-time_a
+print(f"Dataset init took {elapsed_time} seconds")
 def log_plot_balance(dataset):
     counts = Counter(dataset.labels)
     #print(counts[0])
@@ -79,6 +80,7 @@ def compared_plot(dataset,name, max_length=-1):
     plt.xlabel('Time [ms]')
     plt.ylabel('MLIImV')
     plt.show()
+time_a= time.time()
 
 
 #beat_plot(train_dataset,0,"Training",1000)
@@ -86,21 +88,50 @@ def compared_plot(dataset,name, max_length=-1):
 #beat_plot(train_dataset,2,"Training",1000)
 #beat_plot(train_dataset,3,"Training",1000)
 
-compared_plot(train_dataset,"Training", 100)
+#compared_plot(train_dataset,"Training", 100)
 
 
-log_plot_balance(train_dataset)
-
+#log_plot_balance(train_dataset)
+elapsed_time=time.time()-time_a
+print(f"Individual beat plots took {elapsed_time} seconds")
 name = '101'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
 annotation = wfdb.rdann(lib.directory+name, 'atr', sampto=3600)
+detectors = Detectors(360)
+
+signal = record.p_signal[:, 0]
+r_peaks = detectors.pan_tompkins_detector(signal)
+extra_symbols = ['x'] * len(r_peaks) 
+
+# 3. Slå ihop samplenumren och symbolerna
+combined_samples = np.concatenate((annotation.sample, r_peaks))
+combined_symbols = np.array(annotation.symbol + extra_symbols)
+
+# 4. VIKTIGT: Sortera efter samplenummer (wfdb kräver kronologisk ordning)
+sort_indices = np.argsort(combined_samples)
+sorted_samples = combined_samples[sort_indices]
+sorted_symbols = combined_symbols[sort_indices].tolist()  # Konvertera tillbaka till lista
+
+
+ann_chans = np.zeros(len(sorted_samples), dtype=int)
+
+# 5. Skapa det nya kombinerade Annotation-objektet
+combined_ann = wfdb.Annotation(
+    record_name=record.record_name,
+    extension='combined',
+    sample=sorted_samples,
+    symbol=sorted_symbols,
+    chan=ann_chans  
+)
 
 # 2. Plot signals with overlaid beat markers
 wfdb.plot_wfdb(
     record=record, 
-    annotation=annotation,
+    annotation=combined_ann,
     plot_sym=True,
     title="MIT-BIH Record "+name+" (Lead II & V1)",
     time_units="seconds",
     figsize=(12, 6)
 )
+
+print(f"Total time: {time.time()-start_time} seconds")
