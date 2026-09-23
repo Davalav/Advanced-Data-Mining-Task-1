@@ -13,6 +13,7 @@ import seaborn as sns
 import copy
 from collections import Counter
 import scipy.signal as sp
+from scipy.stats import skew, kurtosis
 
 # Specify cutoff in Hertz
 lpf_cutoff = 0.5 
@@ -98,6 +99,182 @@ def format_seconds(seconds: float) -> str:
         return f"{sign}{abs_seconds / 3600:.3f} h"
     else:
         return f"{sign}{abs_seconds / 86400:.3f} days"
+
+
+
+
+class MITBIHFeatureDataset(Dataset):
+    """
+    PyTorch Dataset for MIT-BIH Arrhythmia Database.
+    Extracts hand-crafted feature vectors (RR-interval, morphological,
+    statistical, and spectral features) for each annotated beat, instead
+    of raw waveform segments.
+    """
+    def __init__(self, record_list, window_size=256, channel=0, offset=0):
+        """
+        Args:
+            record_list (list): List of record IDs, e.g., ['100', '101', '102'].
+            window_size (int): Window length (samples) used to compute
+                morphological/statistical features around each R-peak.
+            channel (int): ECG lead channel (0 is typically Lead II).
+            offset (int): Sample offset applied to the window center.
+        """
+        self.window_size = window_size
+        self.channel = channel
+        self.offset = offset
+        self.features = []
+        self.labels = []
+        self.feature_names = None
+
+        self._load_data(record_list)
+
+    def _load_data(self, record_list):
+        half_window = self.window_size // 2
+
+        for record_name in record_list:
+            # Load raw signal and annotations
+            record = wfdb.rdrecord(directory + record_name)
+            annotation = wfdb.rdann(directory + record_name, 'atr')
+
+            signal = record.p_signal[:, self.channel]
+            signal = butter_bandpass_filter(signal, lpf_cutoff, hpf_cutoff, record.fs)
+            signal = notch_filter(signal, 50, record.fs)
+            fs = record.fs
+
+            samples = annotation.sample
+            symbols = annotation.symbol
+            n_beats = len(samples)
+
+            for i in range(n_beats):
+                sample_idx = samples[i]
+                symbol = symbols[i]
+
+                if symbol not in AAMI_MAPPING:
+                    continue
+
+                start_idx = sample_idx - half_window + self.offset
+                end_idx = sample_idx + half_window + self.offset
+
+                # Boundary check
+                if start_idx < 0 or end_idx >= len(signal):
+                    continue
+
+                segment = signal[start_idx:end_idx]
+
+                # RR-interval features (in seconds), using neighboring
+                # annotations regardless of AAMI validity
+                pre_rr = (sample_idx - samples[i - 1]) / fs if i > 0 else np.nan
+                post_rr = (samples[i + 1] - sample_idx) / fs if i < n_beats - 1 else np.nan
+
+                local_window = samples[max(0, i - 5):min(n_beats, i + 6)]
+                if len(local_window) > 1:
+                    local_rr_avg = np.mean(np.diff(local_window)) / fs
+                else:
+                    local_rr_avg = np.nan
+
+                if np.isnan(pre_rr):
+                    pre_rr = post_rr if not np.isnan(post_rr) else local_rr_avg
+                if np.isnan(post_rr):
+                    post_rr = pre_rr if not np.isnan(pre_rr) else local_rr_avg
+                if np.isnan(local_rr_avg):
+                    local_rr_avg = np.nanmean([pre_rr, post_rr])
+
+                rr_ratio = pre_rr / post_rr if post_rr != 0 else 0.0
+
+                feature_vector, names = self._extract_features(
+                    segment, fs, pre_rr, post_rr, local_rr_avg, rr_ratio
+                )
+
+                if self.feature_names is None:
+                    self.feature_names = names
+
+                self.features.append(feature_vector)
+                self.labels.append(AAMI_MAPPING[symbol])
+
+        self.features = np.array(self.features, dtype=np.float32)
+        self.labels = np.array(self.labels, dtype=np.int64)
+
+        # Standardize features across the whole dataset (z-score per column)
+        self._feature_mean = self.features.mean(axis=0)
+        self._feature_std = self.features.std(axis=0)
+        self._feature_std[self._feature_std == 0] = 1.0
+        self.features = (self.features - self._feature_mean) / self._feature_std
+
+    def _extract_features(self, segment, fs, pre_rr, post_rr, local_rr_avg, rr_ratio):
+        """
+        Compute a hand-crafted feature vector for a single beat segment.
+
+        Returns:
+            (np.ndarray, list[str]): feature values and their names.
+        """
+        names = []
+        values = []
+
+        # --- Statistical / amplitude features -----------------------------
+        mean_val = np.mean(segment)
+        std_val = np.std(segment)
+        min_val = np.min(segment)
+        max_val = np.max(segment)
+        median_val = np.median(segment)
+        ptp_val = max_val - min_val
+        energy = np.sum(segment ** 2)
+        skew_val = skew(segment) if std_val > 0 else 0.0
+        kurt_val = kurtosis(segment) if std_val > 0 else 0.0
+
+        names += ['mean', 'std', 'min', 'max', 'median', 'peak_to_peak',
+                  'energy', 'skewness', 'kurtosis']
+        values += [mean_val, std_val, min_val, max_val, median_val,
+                   ptp_val, energy, skew_val, kurt_val]
+
+        # --- Morphological features -----------------------------------
+        r_peak_idx = np.argmax(segment)
+        r_peak_amp = segment[r_peak_idx]
+
+        # QRS width: span where |signal| exceeds half the peak amplitude
+        threshold = 0.5 * np.abs(r_peak_amp)
+        above = np.where(np.abs(segment) >= threshold)[0]
+        qrs_width = (above[-1] - above[0]) / fs if len(above) > 1 else 0.0
+
+        # First derivative based features (slope info)
+        derivative = np.diff(segment)
+        max_slope = np.max(derivative) if len(derivative) else 0.0
+        min_slope = np.min(derivative) if len(derivative) else 0.0
+
+        names += ['r_peak_amplitude', 'r_peak_position', 'qrs_width',
+                  'max_slope', 'min_slope']
+        values += [r_peak_amp, r_peak_idx / len(segment), qrs_width,
+                   max_slope, min_slope]
+
+        # --- Spectral features -----------------------------------------
+        fft_vals = np.abs(np.fft.rfft(segment))
+        freqs = np.fft.rfftfreq(len(segment), d=1.0 / fs)
+        total_power = np.sum(fft_vals ** 2) + 1e-12
+
+        dominant_freq = freqs[np.argmax(fft_vals)] if len(fft_vals) else 0.0
+
+        band_edges = [(0, 5), (5, 15), (15, 30), (30, fs / 2)]
+        band_powers = []
+        for lo, hi in band_edges:
+            mask = (freqs >= lo) & (freqs < hi)
+            band_power = np.sum(fft_vals[mask] ** 2) / total_power
+            band_powers.append(band_power)
+
+        names += ['dominant_freq'] + [f'band_power_{lo}_{hi}' for lo, hi in band_edges]
+        values += [dominant_freq] + band_powers
+
+        # --- RR-interval features --------------------------------------
+        names += ['pre_rr', 'post_rr', 'local_rr_avg', 'rr_ratio']
+        values += [pre_rr, post_rr, local_rr_avg, rr_ratio]
+
+        return np.array(values, dtype=np.float32), names
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        x = torch.tensor(self.features[idx], dtype=torch.float32)
+        y = torch.tensor(self.labels[idx], dtype=torch.long)
+        return x, y
 
 
 class MITBIHDataset(Dataset):
@@ -214,6 +391,31 @@ class ECG1DCNN(nn.Module):
         x = self.features(x)
         x = self.classifier(x)
         return x
+
+class BeatClassifierMLP(nn.Module):
+    """
+    Simple feed-forward classifier for hand-crafted ECG beat features.
+    """
+    def __init__(self, input_dim, num_classes, hidden_dims=(128, 64), dropout=0.3):
+        super().__init__()
+ 
+        layers = []
+        prev_dim = input_dim
+        for hidden_dim in hidden_dims:
+            layers += [
+                nn.Linear(prev_dim, hidden_dim),
+                nn.BatchNorm1d(hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(dropout),
+            ]
+            prev_dim = hidden_dim
+ 
+        layers.append(nn.Linear(prev_dim, num_classes))
+        self.net = nn.Sequential(*layers)
+ 
+    def forward(self, x):
+        return self.net(x)
+
 
 class ECG_model_nature(nn.Module):
     def __init__(

@@ -15,7 +15,7 @@ NUM_CLASSES = 4
 record_counts = {}
 
 for rec in records:
-    ds = lib.MITBIHDataset([rec], window_size=256)
+    ds = lib.MITBIHDataset([rec], window_size=64)
 
     counts = np.bincount(
         ds.labels,

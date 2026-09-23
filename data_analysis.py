@@ -19,12 +19,12 @@ import time
 start_time=time.time()
 time_a= time.time()
 window_size = 64
-offset = 1
+offset = 0
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset)
 val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset)
 test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset)
 elapsed_time=time.time()-time_a
-print(f"Dataset init took {elapsed_time} seconds")
+print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 def log_plot_balance(dataset):
     counts = Counter(dataset.labels)
     #print(counts[0])
@@ -88,19 +88,31 @@ time_a= time.time()
 #beat_plot(train_dataset,2,"Training",1000)
 #beat_plot(train_dataset,3,"Training",1000)
 
-#compared_plot(train_dataset,"Training", 100)
+compared_plot(train_dataset,"Training", 100)
 
 
 #log_plot_balance(train_dataset)
 elapsed_time=time.time()-time_a
-print(f"Individual beat plots took {elapsed_time} seconds")
-name = '101'
+print(f"Individual beat plots took {lib.format_seconds(elapsed_time)}")
+name = '208'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
 annotation = wfdb.rdann(lib.directory+name, 'atr', sampto=3600)
 detectors = Detectors(360)
 
 signal = record.p_signal[:, 0]
 r_peaks = detectors.pan_tompkins_detector(signal)
+#r_peaks = np.array(r_peaks) - 22
+
+corrected_r_peaks = []
+search_window = 50
+for peak in r_peaks:
+    start = max(0, peak - search_window)
+    end = peak + 5
+    # Hitta index för det högsta värdet (R-toppen) i detta fönster
+    local_max = start + np.argmax(signal[start:end])
+    corrected_r_peaks.append(local_max)
+print(np.array(r_peaks)-np.array(corrected_r_peaks))
+r_peaks = np.array(corrected_r_peaks)
 extra_symbols = ['x'] * len(r_peaks) 
 
 # 3. Slå ihop samplenumren och symbolerna
@@ -134,4 +146,4 @@ wfdb.plot_wfdb(
     figsize=(12, 6)
 )
 
-print(f"Total time: {time.time()-start_time} seconds")
+print(f"Total time: {lib.format_seconds(time.time()-start_time)}")
