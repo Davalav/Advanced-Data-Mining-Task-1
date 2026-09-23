@@ -17,8 +17,8 @@ from torch.utils.data import WeightedRandomSampler
 
 
 
-window_size = 128
-offset = 16
+window_size = 64
+offset = 1
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset)
 val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset)
 test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset)
@@ -53,28 +53,47 @@ def beat_plot(dataset,target_label,name, max_length=-1):
         signal = dataset[i][0][0]
         #if(signal.max() < torch.abs(signal.min())):
             #signal = -signal
-        plt.plot(range(len(signal)),signal, color='blue',alpha=max(20/len(indices),0.01))  
+        plt.plot(range(len(signal)),signal, color='blue',alpha=max(20/min(len(indices),max_length),0.01))  
     # Lägg till titlar och etiketter
     plt.title(f'Beat overlap from: {name} dataset, {lib.CLASS_NAMES[target_label]}')
     plt.xlabel('Time [ms]')
     plt.ylabel('MLIImV')
     plt.show()
 
-beat_plot(train_dataset,0,"Training",1000)
-beat_plot(train_dataset,1,"Training",1000)
-beat_plot(train_dataset,2,"Training",1000)
-beat_plot(train_dataset,3,"Training",1000)
+def compared_plot(dataset,name, max_length=-1):
+    if max_length==-1:
+        max_length=len(indices)
+    all_labels = torch.tensor([label for _, label in dataset])
+    colours = ['blue', 'red', 'green', 'yellow']
+    for target_label in range(4):
+        # 2. Find indices for your target label
+        indices = (all_labels == target_label).nonzero(as_tuple=True)[0]
+        print(f"Samples: {len(indices)}, max_length: {max_length}")
+        for i in indices[:max_length]:
+            signal = dataset[i][0][0]
+            #if(signal.max() < torch.abs(signal.min())):
+                #signal = -signal
+            plt.plot(range(len(signal)),signal, color=colours[target_label],alpha=max(20/min(len(indices),max_length),0.01))  
+    # Lägg till titlar och etiketter
+    plt.title(f'Beat overlap comparison from: {name} dataset')
+    plt.xlabel('Time [ms]')
+    plt.ylabel('MLIImV')
+    plt.show()
+
+
+#beat_plot(train_dataset,0,"Training",1000)
+#beat_plot(train_dataset,1,"Training",1000)
+#beat_plot(train_dataset,2,"Training",1000)
+#beat_plot(train_dataset,3,"Training",1000)
+
+compared_plot(train_dataset,"Training", 100)
+
+
+log_plot_balance(train_dataset)
 
 name = '101'
 record = wfdb.rdrecord(lib.directory+name, sampto=3600)  # First 10 seconds (360 Hz * 10s)
 annotation = wfdb.rdann(lib.directory+name, 'atr', sampto=3600)
-
-
-
-
-
-
-log_plot_balance(train_dataset)
 
 # 2. Plot signals with overlaid beat markers
 wfdb.plot_wfdb(
@@ -84,4 +103,4 @@ wfdb.plot_wfdb(
     title="MIT-BIH Record "+name+" (Lead II & V1)",
     time_units="seconds",
     figsize=(12, 6)
-)    
+)
