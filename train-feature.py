@@ -16,7 +16,7 @@ import lib
 from torch.utils.data import WeightedRandomSampler
 start_time=time.time()
 
-window_size=64
+window_size=100
 
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
@@ -31,8 +31,8 @@ print(f"Is CUDA available? {torch.cuda.is_available()}")
 
 # 2. Instantiate PyTorch Datasets
 train_dataset = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size)
-val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size)
-test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size)
+val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
+test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
 elapsed_time=time.time()-start_time
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 # 3. Create PyTorch DataLoaders
@@ -193,6 +193,7 @@ try:
             best_val_loss= val_loss
             best_val_f1 = val_f1
             best_model = copy.deepcopy(model)
+            epochs_without_improvement=0
         else:
             epochs_without_improvement += 1
             if epochs_without_improvement >= patience:
