@@ -15,6 +15,8 @@ from collections import Counter
 import scipy.signal as sp
 from scipy.stats import skew, kurtosis
 from ecgdetectors import Detectors
+from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.linear_model import LogisticRegression
 # Specify cutoff in Hertz
 lpf_cutoff = 0.5 
 hpf_cutoff = 20
@@ -623,6 +625,103 @@ class BeatClassifierMLP(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+def select_features(train_dataset, n_features_to_select=None, direction='forward',
+                     cv=3, scoring='f1_macro', estimator=None, n_jobs=-1, verbose=True):
+    """
+    Fit sklearn's SequentialFeatureSelector on a (already feature-extracted
+    and normalized) training dataset and return the selected feature subset.
+
+    A lightweight sklearn estimator is used purely as a proxy scorer to
+    rank feature subsets during selection - the actual downstream model can
+    still be the PyTorch MLP; only the subset of engineered features it
+    trains on changes. Logistic regression is used by default because it's
+    fast enough to fit hundreds of times (forward/backward selection fits
+    one model per candidate feature, per step, per CV fold) while still
+    being sensitive to which features carry discriminative signal.
+
+    IMPORTANT: fit this on the TRAIN split only, same reasoning as
+    normalization stats - selecting features using val/test data leaks
+    information about those splits into the "feature engineering" step.
+
+    Args:
+        train_dataset: a MITBIHFeatureDataset (train split), already built
+            (and ideally already normalized, since it's about to be fed to
+            LogisticRegression).
+        n_features_to_select (int, float, 'auto', or None): passed through
+            to SequentialFeatureSelector. None defaults to half of the
+            available features.
+        direction ('forward' or 'backward'): forward starts from 0 features
+            and adds the best one each step; backward starts from all
+            features and removes the worst. Forward is cheaper when
+            n_features_to_select is well below the total feature count
+            (the common case here).
+        cv (int): cross-validation folds used to score each candidate subset.
+        scoring (str): sklearn scoring string. 'f1_macro' is used by default
+            since it weights all four AAMI classes equally, matching what
+            we actually care about (not just overall/Normal-dominated
+            accuracy).
+        estimator: sklearn-compatible estimator used as the proxy scorer.
+            Defaults to class-balanced multinomial LogisticRegression.
+        n_jobs (int): parallelism for SequentialFeatureSelector.
+
+    Returns:
+        selected_indices (np.ndarray[int]): column indices into
+            train_dataset.features that were selected.
+        selected_names (list[str] or None): corresponding feature names,
+            if train_dataset.feature_names is available.
+    """
+    X = train_dataset.features
+    y = train_dataset.labels
+
+    if estimator is None:
+        estimator = LogisticRegression(max_iter=1000, class_weight='balanced')
+
+    if n_features_to_select is None:
+        n_features_to_select = max(1, X.shape[1] // 2)
+
+    selector = SequentialFeatureSelector(
+        estimator,
+        n_features_to_select=n_features_to_select,
+        direction=direction,
+        scoring=scoring,
+        cv=cv,
+        n_jobs=n_jobs,
+    )
+    selector.fit(X, y)
+
+    selected_mask = selector.get_support()
+    selected_indices = np.where(selected_mask)[0]
+    selected_names = (
+        [train_dataset.feature_names[i] for i in selected_indices]
+        if train_dataset.feature_names is not None else None
+    )
+
+    if verbose:
+        print(f"Selected {len(selected_indices)}/{X.shape[1]} features "
+              f"(direction={direction}, scoring={scoring}, cv={cv}):")
+        if selected_names is not None:
+            for name in selected_names:
+                print(f"  - {name}")
+
+    return selected_indices, selected_names
+
+
+def apply_feature_selection(dataset, selected_indices):
+    """
+    Subset a MITBIHFeatureDataset's feature matrix (and associated
+    feature_names / feature_mean / feature_std, if present) to the given
+    column indices, in place. Use this to apply the SAME selection (fit on
+    train) to val/test datasets.
+    """
+    dataset.features = dataset.features[:, selected_indices]
+    if dataset.feature_names is not None:
+        dataset.feature_names = [dataset.feature_names[i] for i in selected_indices]
+    if dataset.feature_mean is not None:
+        dataset.feature_mean = dataset.feature_mean[selected_indices]
+    if dataset.feature_std is not None:
+        dataset.feature_std = dataset.feature_std[selected_indices]
+    return dataset
 
 
 class ECG_model_nature(nn.Module):

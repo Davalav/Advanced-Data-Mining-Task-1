@@ -34,7 +34,33 @@ train_dataset = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_s
 val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
 test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
 elapsed_time=time.time()-start_time
+time_A=time.time()
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
+
+# --- Feature selection (fit on train only, applied to both splits) ----
+USE_FEATURE_SELECTION = True
+N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
+
+if USE_FEATURE_SELECTION:
+    selected_indices, _ = lib.select_features(
+        train_dataset,
+        n_features_to_select=N_FEATURES_TO_SELECT,
+        direction='forward',
+        cv=3,
+        scoring='f1_macro',
+    )
+    lib.apply_feature_selection(train_dataset, selected_indices)
+    lib.apply_feature_selection(val_dataset, selected_indices)
+    lib.apply_feature_selection(test_dataset, selected_indices)
+
+    # If you build a separate test_dataset elsewhere, apply the same
+    # selected_indices to it before evaluating - never re-fit selection
+    # on val/test.
+
+elapsed_time=time.time()-time_A
+time_A=time.time()
+print(f"Feature selection took {lib.format_seconds(elapsed_time)}")
+
 # 3. Create PyTorch DataLoaders
 print(train_dataset.feature_names)
 labels = train_dataset.labels
@@ -63,7 +89,8 @@ for x_batch, y_batch in train_loader:
 
 
 
-elapsed_time=time.time()-start_time-elapsed_time
+elapsed_time=time.time()-time_A
+time_A=time.time()
 print(f"Datasetloader init took {lib.format_seconds(elapsed_time)}")
 
 
@@ -172,7 +199,9 @@ val_f1_list=[]
 best_model = copy.deepcopy(model)
 best_epoch=-1
 
-elapsed_time=time.time()-start_time-elapsed_time
+
+elapsed_time=time.time()-time_A
+time_A=time.time()
 print(f"Model init took {lib.format_seconds(elapsed_time)}")
 
 try:
@@ -211,6 +240,9 @@ except KeyboardInterrupt:
     print("\nProgram terminated by user.\nSkipping to testing")
 print(f"Best model was found at epoch: {best_epoch}/{num_epochs}")
 
+elapsed_time=time.time()-time_A
+time_A=time.time()
+print(f"Training took {lib.format_seconds(elapsed_time)}")
 
 model = copy.deepcopy(best_model.to(device))
 cm =lib.evaluate_and_plot_cm(model,train_loader,device, "Training")
