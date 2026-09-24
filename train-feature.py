@@ -36,7 +36,7 @@ test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_s
 elapsed_time=time.time()-start_time
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 # 3. Create PyTorch DataLoaders
-
+print(train_dataset.feature_names)
 labels = train_dataset.labels
 
 class_counts = np.bincount(labels)
@@ -49,7 +49,7 @@ len(sample_weights),
 replacement=True
 )
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, sampler=sampler)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)#False, sampler=sampler)
 val_loader   = DataLoader(val_dataset, batch_size=64, shuffle=False)
 test_loader   = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
@@ -78,19 +78,19 @@ print(f"Using device: {device}")
 input_dim = train_dataset.features.shape[1]
 num_classes = len(np.unique(train_dataset.labels))
 
+
+model = lib.BeatClassifierMLP(input_dim=input_dim, num_classes=num_classes).to(device)
+
 # Handle class imbalance (common in MIT-BIH: normal beats dominate)
 class_counts = np.bincount(train_dataset.labels, minlength=num_classes)
 class_weights = torch.tensor(
-    1.0 / np.maximum(class_counts, 1), dtype=torch.float32
+    1.0 / np.sqrt(np.maximum(class_counts, 1)), dtype=torch.float32
 )
 class_weights = class_weights / class_weights.sum() * num_classes
 class_weights = class_weights.to(device)
 
-model = lib.BeatClassifierMLP(input_dim=input_dim, num_classes=num_classes).to(device)
-
-
-class_weights = lib.compute_class_weights(train_dataset.labels, num_classes=4)
-class_weights = class_weights.to(device)
+#class_weights = lib.compute_class_weights(train_dataset.labels, num_classes=4)
+#class_weights = class_weights.to(device)
 print("Computed Class Weights:")
 for i, w in enumerate(class_weights):
     print(f"  Class {i}: {w.item():.4f}")
@@ -152,16 +152,16 @@ class StableFocalLoss(nn.Module):
 
 # Usage
 #class_weights = class_weights/class_weights.mean()
-criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
+#criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
 #class_weights[3]=0
 #criterion_val = StableFocalLoss(alpha=class_weights, gamma=1.0)
 #criterion = nn.CrossEntropyLoss()
-#criterion = nn.CrossEntropyLoss(weight=class_weights)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
 optimizer = optim.Adam(model.parameters(), lr=1e-4,weight_decay=1e-4)
 lib.count_parameters(model)
 # Run Training Loop
 num_epochs = 50
-patience=10
+patience=15
 epochs_without_improvement=0
 best_val_loss= 100
 best_val_f1 = 0
@@ -187,7 +187,7 @@ try:
         
         val_f1 = lib.f1_calc(model,val_loader,device)
         val_f1_list.append(val_f1)
-        if(best_val_f1< val_f1):
+        if(val_loss< best_val_loss):
             print("New best found!")
             best_epoch=epoch
             best_val_loss= val_loss
@@ -226,7 +226,6 @@ test_f1 = lib.f1_calc(model,test_loader,device)
 print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Acc: {test_acc * 100:.2f}% - F1 Macro {test_f1*100:.2f}%")
 
-print("Training dataset CM")
 cm =lib.evaluate_and_plot_cm(model,test_loader,device, "Testing")
 
 plt.plot(range(1,len(train_loss_list)+1),train_loss_list)
