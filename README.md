@@ -18,7 +18,9 @@ Best CM:
     Patience: 15
 }
 ```
-`
+Lite extra data:
+
+```
 Final test | Test Loss: 0.4043 - Acc: 87.43% - F1 Macro 60.18%
 
 --- Classification Report Testing dataset ---
@@ -32,4 +34,10 @@ Supraventricular (S)     0.1372    0.3413    0.1957      1837
             accuracy                         0.8743     49700
            macro avg     0.5698    0.7131    0.6018     49700
         weighted avg     0.9311    0.8743    0.8989     49700
-`
+```
+
+![Training graph](Best_training.png)
+
+![Validation graph](Best_val_loss.png)
+
+![Validation F1 Macro](Best_f1_macro.png)
