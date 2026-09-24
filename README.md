@@ -1,5 +1,6 @@
 # Advanced-Data-Mining-Task-1
 
+Current best: [BeatClassifierMLP](models/BeatClassifierMLP-0.9080-0.8743-14,50_2026-09-24 18_02_04.pth)
 
 Best CM:
 
