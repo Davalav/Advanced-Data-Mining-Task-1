@@ -5,7 +5,7 @@ Best CM:
 
 ![Test Confusion Matrix](Best_CM.png)
 
-'''
+```
 {
     window_size: 100
     offset: 10
@@ -17,4 +17,4 @@ Best CM:
     Epochs: 50
     Patience: 15
 }
-'''
+```
