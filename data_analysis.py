@@ -18,7 +18,7 @@ from ecgdetectors import Detectors
 import time
 start_time=time.time()
 time_a= time.time()
-window_size = 64
+window_size = 100
 offset = 0
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset)
 val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset)

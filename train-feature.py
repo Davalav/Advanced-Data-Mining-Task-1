@@ -17,7 +17,7 @@ from torch.utils.data import WeightedRandomSampler
 start_time=time.time()
 
 window_size=100
-
+offset = 10
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
@@ -40,7 +40,6 @@ print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 # --- Feature selection (fit on train only, applied to both splits) ----
 USE_FEATURE_SELECTION = True
 N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
-
 if USE_FEATURE_SELECTION:
     selected_indices, _ = lib.select_features(
         train_dataset,
