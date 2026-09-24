@@ -49,7 +49,7 @@ len(sample_weights),
 replacement=True
 )
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)#False, sampler=sampler)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, sampler=sampler)
 val_loader   = DataLoader(val_dataset, batch_size=64, shuffle=False)
 test_loader   = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
@@ -153,7 +153,6 @@ class StableFocalLoss(nn.Module):
 # Usage
 #class_weights = class_weights/class_weights.mean()
 #criterion = StableFocalLoss(alpha=class_weights, gamma=1.0)
-#class_weights[3]=0
 #criterion_val = StableFocalLoss(alpha=class_weights, gamma=1.0)
 #criterion = nn.CrossEntropyLoss()
 criterion = nn.CrossEntropyLoss(weight=class_weights)

@@ -112,35 +112,34 @@ except ImportError:
     print("WARNING: pywavelets not installed (`pip install PyWavelets`). "
           "Wavelet-energy features will be filled with zeros.")
 
-# AAMI-standard symbols that fall in the "Normal" superclass. Used only to
-# build a per-record normal-beat template for morphology comparison -
-# independent of however AAMI_MAPPING happens to be indexed.
+# AAMI-standard symbols used to build per-record beat templates, independent
+# of however AAMI_MAPPING happens to be indexed.
 DEFAULT_NORMAL_SYMBOLS = ('N', 'L', 'R', 'e', 'j')
+DEFAULT_V_SYMBOLS = ('V', 'E')
 
 
 class MITBIHFeatureDataset(Dataset):
     """
     PyTorch Dataset for MIT-BIH Arrhythmia Database.
     Extracts hand-crafted feature vectors (RR-interval, morphological,
-    statistical, spectral, wavelet, and template-similarity features) for
-    each annotated beat, instead of raw waveform segments.
+    statistical, spectral, wavelet, dual-template-similarity, and
+    optional second-lead features) for each annotated beat.
 
     IMPORTANT - normalization:
     Feature z-score stats (mean/std) are fit on THIS dataset's data unless
     `feature_mean` / `feature_std` are explicitly passed in, in which case
     those stats are used instead (and not re-fit). Always fit stats on the
-    TRAINING split only, then pass them into the val/test dataset
-    constructors - fitting normalization separately per split silently
-    leaks split-specific statistics and creates a train/val/test scale
-    mismatch.
+    TRAINING split only, then pass them into val/test dataset constructors:
 
         train_ds = MITBIHFeatureDataset(train_records)
         val_ds   = MITBIHFeatureDataset(val_records,
                                          feature_mean=train_ds.feature_mean,
                                          feature_std=train_ds.feature_std)
     """
-    def __init__(self, record_list, window_size=256, channel=0, offset=0,
+    def __init__(self, record_list, window_size=256, channel=0, channel2=1,
+                 offset=0,
                  normal_symbols=DEFAULT_NORMAL_SYMBOLS,
+                 v_symbols=DEFAULT_V_SYMBOLS,
                  wavelet='db4', wavelet_level=3,
                  normalize=True, feature_mean=None, feature_std=None):
         """
@@ -148,10 +147,16 @@ class MITBIHFeatureDataset(Dataset):
             record_list (list): List of record IDs, e.g., ['100', '101', '102'].
             window_size (int): Window length (samples) used to compute
                 morphological/statistical features around each R-peak.
-            channel (int): ECG lead channel (0 is typically Lead II).
+            channel (int): Primary ECG lead channel (0 is typically Lead II).
+            channel2 (int or None): Secondary ECG lead channel used for a
+                small set of cross-lead features. Set to None to disable.
+                Records with fewer than `channel2 + 1` signals fall back to
+                zero-filled second-lead features automatically.
             offset (int): Sample offset applied to the window center.
             normal_symbols (tuple): Annotation symbols treated as "Normal"
-                when building the per-record beat template.
+                when building the per-record normal-beat template.
+            v_symbols (tuple): Annotation symbols treated as "Ventricular"
+                when building the per-record ventricular-beat template.
             wavelet (str): PyWavelets wavelet name for morphology features.
             wavelet_level (int): Decomposition level for wavelet features.
             normalize (bool): Whether to z-score normalize features.
@@ -162,8 +167,10 @@ class MITBIHFeatureDataset(Dataset):
         """
         self.window_size = window_size
         self.channel = channel
+        self.channel2 = channel2
         self.offset = offset
         self.normal_symbols = set(normal_symbols)
+        self.v_symbols = set(v_symbols)
         self.wavelet = wavelet
         self.wavelet_level = wavelet_level
         self.features = []
@@ -194,19 +201,29 @@ class MITBIHFeatureDataset(Dataset):
         for record_name in record_list:
             record = wfdb.rdrecord(directory + record_name)
             annotation = wfdb.rdann(directory + record_name, 'atr')
+            fs = record.fs
 
             signal = record.p_signal[:, self.channel]
-            signal = butter_bandpass_filter(signal, lpf_cutoff, hpf_cutoff, record.fs)
-            signal = notch_filter(signal, 50, record.fs)
-            fs = record.fs
+            signal = butter_bandpass_filter(signal, lpf_cutoff, hpf_cutoff, fs)
+            signal = notch_filter(signal, 50, fs)
+
+            has_ch2 = (self.channel2 is not None
+                       and record.p_signal.shape[1] > self.channel2)
+            if has_ch2:
+                signal2 = record.p_signal[:, self.channel2]
+                signal2 = butter_bandpass_filter(signal2, lpf_cutoff, hpf_cutoff, fs)
+                signal2 = notch_filter(signal2, 50, fs)
+            else:
+                signal2 = None
 
             samples = annotation.sample
             symbols = annotation.symbol
             n_beats = len(samples)
 
             # ---- Pass 1: extract segments + RR features for this record ----
-            record_beats = []   # list of dicts, one per valid beat
-            normal_segments = []
+            record_beats = []
+            normal_segments, v_segments = [], []
+            normal_segments2 = []
 
             for i in range(n_beats):
                 sample_idx = samples[i]
@@ -221,6 +238,7 @@ class MITBIHFeatureDataset(Dataset):
                     continue
 
                 segment = signal[start_idx:end_idx]
+                segment2 = signal2[start_idx:end_idx] if has_ch2 else None
 
                 pre_rr = (sample_idx - samples[i - 1]) / fs if i > 0 else np.nan
                 post_rr = (samples[i + 1] - sample_idx) / fs if i < n_beats - 1 else np.nan
@@ -236,13 +254,10 @@ class MITBIHFeatureDataset(Dataset):
                     local_rr_avg = np.nanmean([pre_rr, post_rr])
 
                 rr_ratio = pre_rr / post_rr if post_rr != 0 else 0.0
-                # Compensatory-pause ratio: classic PVC discriminator -
-                # ventricular ectopic beats are typically followed by a
-                # pause that (roughly) compensates for the early beat.
                 compensatory_pause_ratio = (post_rr - pre_rr) / pre_rr if pre_rr != 0 else 0.0
 
                 record_beats.append(dict(
-                    segment=segment, symbol=symbol, fs=fs,
+                    segment=segment, segment2=segment2, symbol=symbol, fs=fs,
                     pre_rr=pre_rr, post_rr=post_rr,
                     local_rr_avg=local_rr_avg, rr_ratio=rr_ratio,
                     compensatory_pause_ratio=compensatory_pause_ratio,
@@ -250,24 +265,35 @@ class MITBIHFeatureDataset(Dataset):
 
                 if symbol in self.normal_symbols:
                     normal_segments.append(segment)
+                    if has_ch2:
+                        normal_segments2.append(segment2)
+                elif symbol in self.v_symbols:
+                    v_segments.append(segment)
 
             if len(record_beats) == 0:
                 continue
 
-            # Per-record "normal beat" template for morphology comparison.
-            # Falls back to the record's overall mean beat if no clean
-            # normal beats were found (e.g. a fully arrhythmic record).
-            if len(normal_segments) > 0:
-                template = np.mean(np.stack(normal_segments), axis=0)
-            else:
-                template = np.mean(np.stack([b['segment'] for b in record_beats]), axis=0)
+            all_segments = [b['segment'] for b in record_beats]
 
-            # ---- Pass 2: finalize feature vectors using the template ----
+            # Per-record templates. Each falls back to the record's overall
+            # mean beat if that symbol class wasn't observed in this record.
+            template_n = (np.mean(np.stack(normal_segments), axis=0)
+                          if normal_segments else np.mean(np.stack(all_segments), axis=0))
+            template_v = (np.mean(np.stack(v_segments), axis=0)
+                          if v_segments else np.mean(np.stack(all_segments), axis=0))
+            template_n2 = (np.mean(np.stack(normal_segments2), axis=0)
+                           if has_ch2 and normal_segments2 else None)
+
+            template_n_qrs_width = self._compute_qrs_width(template_n, fs)
+
+            # ---- Pass 2: finalize feature vectors using the templates ----
             for b in record_beats:
                 feature_vector, names = self._extract_features(
-                    b['segment'], b['fs'], template,
+                    b['segment'], b['fs'], template_n, template_v,
+                    template_n_qrs_width,
                     b['pre_rr'], b['post_rr'], b['local_rr_avg'],
                     b['rr_ratio'], b['compensatory_pause_ratio'],
+                    segment2=b['segment2'], template_n2=template_n2,
                 )
                 if self.feature_names is None:
                     self.feature_names = names
@@ -279,10 +305,32 @@ class MITBIHFeatureDataset(Dataset):
         self.labels = np.array(self.labels, dtype=np.int64)
 
     # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _compute_qrs_width(segment, fs):
+        """QRS width (seconds) via half-amplitude threshold, searched
+        outward from the R-peak in each direction (avoids picking up a
+        neighboring beat elsewhere in the window)."""
+        r_peak_idx = np.argmax(segment)
+        r_peak_amp = segment[r_peak_idx]
+        threshold = 0.5 * np.abs(r_peak_amp)
+
+        left = r_peak_idx
+        while left > 0 and np.abs(segment[left]) >= threshold:
+            left -= 1
+        right = r_peak_idx
+        while right < len(segment) - 1 and np.abs(segment[right]) >= threshold:
+            right += 1
+        return (right - left) / fs
+
+    # ------------------------------------------------------------------
     # Feature extraction
     # ------------------------------------------------------------------
-    def _extract_features(self, segment, fs, template, pre_rr, post_rr,
-                           local_rr_avg, rr_ratio, compensatory_pause_ratio):
+    def _extract_features(self, segment, fs, template_n, template_v,
+                           template_n_qrs_width, pre_rr, post_rr,
+                           local_rr_avg, rr_ratio, compensatory_pause_ratio,
+                           segment2=None, template_n2=None):
         """
         Compute a hand-crafted feature vector for a single beat segment.
 
@@ -308,54 +356,62 @@ class MITBIHFeatureDataset(Dataset):
         values += [mean_val, std_val, min_val, max_val, median_val,
                    ptp_val, energy, skew_val, kurt_val]
 
-        # --- Hjorth parameters (signal-complexity features) ---------------
+        # --- Hjorth parameters + zero-crossing complexity ------------------
         d1 = np.diff(segment)
         d2 = np.diff(d1)
-        var0 = np.var(segment)
-        var1 = np.var(d1)
-        var2 = np.var(d2)
+        var0, var1, var2 = np.var(segment), np.var(d1), np.var(d2)
         hjorth_mobility = np.sqrt(var1 / var0) if var0 > 0 else 0.0
         mobility_d1 = np.sqrt(var2 / var1) if var1 > 0 else 0.0
         hjorth_complexity = mobility_d1 / hjorth_mobility if hjorth_mobility > 0 else 0.0
+        # Sign changes in the first derivative - crude "notchiness" measure.
+        # Fusion/Ventricular beats tend to have more inflection points than
+        # a clean Normal beat.
+        zero_crossings = np.sum(np.diff(np.sign(d1)) != 0)
 
-        names += ['hjorth_mobility', 'hjorth_complexity']
-        values += [hjorth_mobility, hjorth_complexity]
+        names += ['hjorth_mobility', 'hjorth_complexity', 'zero_crossings']
+        values += [hjorth_mobility, hjorth_complexity, zero_crossings]
 
         # --- Morphological features -----------------------------------
         r_peak_idx = np.argmax(segment)
         r_peak_amp = segment[r_peak_idx]
-
-        # QRS width via half-amplitude threshold, searched outward from the
-        # R-peak only (avoids picking up a neighboring beat in the window).
-        threshold = 0.5 * np.abs(r_peak_amp)
-        left = r_peak_idx
-        while left > 0 and np.abs(segment[left]) >= threshold:
-            left -= 1
-        right = r_peak_idx
-        while right < len(segment) - 1 and np.abs(segment[right]) >= threshold:
-            right += 1
-        qrs_width = (right - left) / fs
+        qrs_width = self._compute_qrs_width(segment, fs)
+        # QRS width relative to THIS PATIENT's own normal QRS width - "wide"
+        # is only meaningful relative to a patient's own baseline.
+        qrs_width_delta = qrs_width - template_n_qrs_width
 
         max_slope = np.max(d1) if len(d1) else 0.0
         min_slope = np.min(d1) if len(d1) else 0.0
 
         names += ['r_peak_amplitude', 'r_peak_position', 'qrs_width',
-                  'max_slope', 'min_slope']
+                  'qrs_width_delta', 'max_slope', 'min_slope']
         values += [r_peak_amp, r_peak_idx / len(segment), qrs_width,
-                   max_slope, min_slope]
+                   qrs_width_delta, max_slope, min_slope]
 
-        # --- Template-similarity features -------------------------------
-        # Compares this beat's morphology to the patient's own average
-        # normal beat - S/V/F beats typically deviate characteristically
-        # from a patient's normal template even when raw statistics overlap.
-        if np.std(segment) > 0 and np.std(template) > 0:
-            template_correlation = np.corrcoef(segment, template)[0, 1]
-        else:
-            template_correlation = 0.0
-        template_distance = np.linalg.norm(segment - template) / len(segment)
+        # --- Dual-template-similarity features ------------------------
+        # Fusion beats are, by definition, a morphological blend of a
+        # Normal beat and a Ventricular ectopic beat, so where a beat sits
+        # BETWEEN the two patient-specific templates is more informative
+        # for separating F than distance-from-Normal alone.
+        def _corr(a, b):
+            if np.std(a) > 0 and np.std(b) > 0:
+                return np.corrcoef(a, b)[0, 1]
+            return 0.0
 
-        names += ['template_correlation', 'template_distance']
-        values += [template_correlation, template_distance]
+        template_n_correlation = _corr(segment, template_n)
+        template_n_distance = np.linalg.norm(segment - template_n) / len(segment)
+        template_v_correlation = _corr(segment, template_v)
+        template_v_distance = np.linalg.norm(segment - template_v) / len(segment)
+
+        blend_score = template_v_correlation - template_n_correlation
+        denom = template_n_distance + template_v_distance + 1e-8
+        blend_distance_ratio = template_n_distance / denom  # ~0 -> close to N, ~1 -> close to V
+
+        names += ['template_n_correlation', 'template_n_distance',
+                   'template_v_correlation', 'template_v_distance',
+                   'blend_score', 'blend_distance_ratio']
+        values += [template_n_correlation, template_n_distance,
+                    template_v_correlation, template_v_distance,
+                    blend_score, blend_distance_ratio]
 
         # --- Spectral features -----------------------------------------
         fft_vals = np.abs(np.fft.rfft(segment))
@@ -375,8 +431,6 @@ class MITBIHFeatureDataset(Dataset):
         values += [dominant_freq] + band_powers
 
         # --- Wavelet-energy features -------------------------------------
-        # Multi-resolution morphology (esp. QRS sharpness/shape) that plain
-        # FFT band power doesn't separate well.
         if _HAS_PYWT:
             coeffs = pywt.wavedec(segment, self.wavelet, level=self.wavelet_level)
             energies = np.array([np.sum(c ** 2) for c in coeffs])
@@ -394,6 +448,30 @@ class MITBIHFeatureDataset(Dataset):
         values += [pre_rr, post_rr, local_rr_avg, rr_ratio,
                    compensatory_pause_ratio]
 
+        # --- Second-lead features ---------------------------------------
+        # A beat that's ambiguous on one lead is often much clearer on the
+        # other; this is especially useful for the Fusion/Normal boundary.
+        # Zero-filled (with a validity flag) when a second lead isn't
+        # available for this record, so the feature vector stays fixed-size.
+        if segment2 is not None:
+            ch2_valid = 1.0
+            ch2_std = np.std(segment2)
+            ch2_energy = np.sum(segment2 ** 2)
+            ch2_r_peak_amp = segment2[np.argmax(segment2)]
+            ch2_qrs_width = self._compute_qrs_width(segment2, fs)
+            ch2_template_correlation = (
+                _corr(segment2, template_n2) if template_n2 is not None else 0.0
+            )
+        else:
+            ch2_valid = 0.0
+            ch2_std = ch2_energy = ch2_r_peak_amp = 0.0
+            ch2_qrs_width = ch2_template_correlation = 0.0
+
+        names += ['ch2_valid', 'ch2_std', 'ch2_energy', 'ch2_r_peak_amplitude',
+                  'ch2_qrs_width', 'ch2_template_correlation']
+        values += [ch2_valid, ch2_std, ch2_energy, ch2_r_peak_amp,
+                   ch2_qrs_width, ch2_template_correlation]
+
         return np.array(values, dtype=np.float32), names
 
     def __len__(self):
@@ -403,6 +481,7 @@ class MITBIHFeatureDataset(Dataset):
         x = torch.tensor(self.features[idx], dtype=torch.float32)
         y = torch.tensor(self.labels[idx], dtype=torch.long)
         return x, y
+
 
 
 
