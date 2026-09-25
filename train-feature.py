@@ -39,7 +39,7 @@ print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 
 # --- Feature selection (fit on train only, applied to both splits) ----
 USE_FEATURE_SELECTION = True
-N_FEATURES_TO_SELECT = 6  # tune as needed; None = half of all features
+N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
 if USE_FEATURE_SELECTION:
     selected_indices, _ = lib.select_features(
         train_dataset,
@@ -248,7 +248,7 @@ cm =lib.evaluate_and_plot_cm(model,train_loader,device, "Training")
 cm =lib.evaluate_and_plot_cm(model,val_loader,device, "Validation")
 current_time = time.strftime("%Y-%m-%d-%H_%M_%S")
 test_loss, test_acc   = lib.evaluate(model, test_loader, criterion, device)
-torch.save(model.state_dict(), f"models/{model.__class__.__name__}-{val_acc:.4f}-{test_acc:.4f}-{best_epoch}_{num_epochs}_{N_FEATURES_TO_SELECT if USE_FEATURE_SELECTION else "False"}_{current_time}.pth")
+torch.save(model.state_dict(), f"models/{model.__class__.__name__}-{val_acc:.4f}-{test_acc:.4f}-{best_epoch}_{num_epochs}_{N_FEATURES_TO_SELECT if USE_FEATURE_SELECTION else 'False'}_{current_time}.pth")
 
 
 test_f1 = lib.f1_calc(model,test_loader,device)

@@ -15,6 +15,7 @@ from collections import Counter
 import lib
 from torch.utils.data import WeightedRandomSampler
 import sys
+start_time=time.time()
 
 print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
@@ -81,3 +82,5 @@ print(f"Final test | "
             f"Test Loss: {test_loss:.4f} - Acc: {test_acc * 100:.2f}% - F1 Macro {test_f1*100:.2f}%")
 
 cm =lib.evaluate_and_plot_cm(model,test_loader,device, "Testing")
+
+print(f"Total time: {lib.format_seconds(time.time()-start_time)}")
