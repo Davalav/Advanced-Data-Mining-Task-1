@@ -37,9 +37,9 @@ elapsed_time=time.time()-start_time
 time_A=time.time()
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 
-# --- Feature selection (fit on train only, applied to both splits) ----
+# --- Feature selection (fit on train only, applied to all splits) ----
 USE_FEATURE_SELECTION = True
-N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
+N_FEATURES_TO_SELECT = 7
 if USE_FEATURE_SELECTION:
     selected_indices, _ = lib.select_features(
         train_dataset,
@@ -51,10 +51,6 @@ if USE_FEATURE_SELECTION:
     lib.apply_feature_selection(train_dataset, selected_indices)
     lib.apply_feature_selection(val_dataset, selected_indices)
     lib.apply_feature_selection(test_dataset, selected_indices)
-
-    # If you build a separate test_dataset elsewhere, apply the same
-    # selected_indices to it before evaluating - never re-fit selection
-    # on val/test.
 
 elapsed_time=time.time()-time_A
 time_A=time.time()
