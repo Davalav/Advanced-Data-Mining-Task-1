@@ -1,6 +1,7 @@
 Setup:
 conda create -n d7043e python=3.11.14
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+pip install torchshow
 pip install scikit-learn
 pip install wfdb
-pip install seaborn
+pip install PyWavelets
