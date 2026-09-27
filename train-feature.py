@@ -39,7 +39,7 @@ print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 
 # --- Feature selection (fit on train only, applied to all splits) ----
 USE_FEATURE_SELECTION = True
-N_FEATURES_TO_SELECT = 7
+N_FEATURES_TO_SELECT = 5
 if USE_FEATURE_SELECTION:
     selected_indices, _ = lib.select_features(
         train_dataset,

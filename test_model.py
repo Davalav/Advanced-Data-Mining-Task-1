@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 USE_FEATURE_SELECTION = True
 N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
 input_dim = N_FEATURES_TO_SELECT
-num_classes = 4
+num_classes = 5
 window_size=100
 offset = 10
 
