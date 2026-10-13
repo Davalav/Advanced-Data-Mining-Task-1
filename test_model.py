@@ -1,19 +1,9 @@
 import torch
 import numpy as np
-from torch.utils.data import Dataset, DataLoader
-import wfdb
-import torchshow as ts
+from torch.utils.data import DataLoader
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import matplotlib.pyplot as plt
 import time
-from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
-import copy
-from collections import Counter
 import lib
-from torch.utils.data import WeightedRandomSampler
 import sys
 start_time=time.time()
 
@@ -26,7 +16,7 @@ print(f"Using device: {device}")
 USE_FEATURE_SELECTION = True
 N_FEATURES_TO_SELECT = 5  # tune as needed; None = half of all features
 input_dim = N_FEATURES_TO_SELECT
-num_classes = 5
+num_classes = 4
 window_size=100
 offset = 10
 
@@ -35,7 +25,7 @@ if len(sys.argv) >1:
     model.load_state_dict(torch.load(sys.argv[1]))
 else:
     raise Exception("Missing file argument")
-start_time=time.time()
+lib.model_size(model)
 
 train_dataset = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size)
 test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)

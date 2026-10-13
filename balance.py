@@ -105,6 +105,8 @@ test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200',
 #train_dataset = MITBIHDataset(record_list=train_val_records[:int(train_val_split*len(train_val_records))], window_size=256)
 #val_dataset   = MITBIHDataset(record_list=train_val_records[int(train_val_split*len(train_val_records)):], window_size=256)
 #test_dataset   = MITBIHDataset(record_list=test_records, window_size=256)
+full_dataset = MITBIHDataset(record_list=train_val_records+test_records, window_size=100)
+
 
 # 3. Create PyTorch DataLoaders
 #train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
@@ -127,6 +129,8 @@ def log_plot_balance(dataset):
     plt.xlabel('Labels')
     plt.ylabel('Procent')
     plt.show()
+
+log_plot_balance(full_dataset)
 
 
 def print_plot_balance(dataset):

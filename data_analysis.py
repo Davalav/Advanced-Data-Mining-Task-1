@@ -20,9 +20,11 @@ start_time=time.time()
 time_a= time.time()
 window_size = 100
 offset = 0
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset)
-val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset)
-test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset)
+preprocessing = False
+train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
+val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
+test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
+full_dataset = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
 elapsed_time=time.time()-time_a
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")
 def log_plot_balance(dataset):
@@ -42,30 +44,35 @@ def log_plot_balance(dataset):
     plt.ylabel('Frequency percentage')
     plt.show()
 
+colours = ['blue', 'red', 'green', 'orange']
+
+
 def beat_plot(dataset,target_label,name, max_length=-1):
-    if max_length==-1:
-        max_length=len(indices)
     all_labels = torch.tensor([label for _, label in dataset])
 
     # 2. Find indices for your target label
     indices = (all_labels == target_label).nonzero(as_tuple=True)[0]
+    if max_length==-1:
+        max_length=len(indices)
     print(f"Samples: {len(indices)}, max_length: {max_length}")
     for i in indices[:max_length]:
         signal = dataset[i][0][0]
         #if(signal.max() < torch.abs(signal.min())):
             #signal = -signal
-        plt.plot(range(len(signal)),signal, color='blue',alpha=max(20/min(len(indices),max_length),0.01))  
+        alpha = max(20/min(len(indices),max_length),0.01)
+        if (max_length == 1 or alpha > 1):
+            alpha =1
+        plt.plot(range(len(signal)),signal, color=colours[target_label],alpha=alpha)  
     # Lägg till titlar och etiketter
-    plt.title(f'Beat overlap from: {name} dataset, {lib.CLASS_NAMES[target_label]}')
+    plt.title(f'Beat from: {name} dataset, {lib.CLASS_NAMES[target_label]}')
     plt.xlabel('Time [ms]')
     plt.ylabel('MLIImV')
     plt.show()
 
 def compared_plot(dataset,name, max_length=-1):
     if max_length==-1:
-        max_length=len(indices)
+        max_length=len(dataset)
     all_labels = torch.tensor([label for _, label in dataset])
-    colours = ['blue', 'red', 'green', 'yellow']
     for target_label in range(4):
         # 2. Find indices for your target label
         indices = (all_labels == target_label).nonzero(as_tuple=True)[0]
@@ -74,7 +81,7 @@ def compared_plot(dataset,name, max_length=-1):
             signal = dataset[i][0][0]
             #if(signal.max() < torch.abs(signal.min())):
                 #signal = -signal
-            plt.plot(range(len(signal)),signal, color=colours[target_label],alpha=max(20/min(len(indices),max_length),0.01))  
+            plt.plot(range(len(signal)),signal, color=colours[target_label],alpha=1)
     # Lägg till titlar och etiketter
     plt.title(f'Beat overlap comparison from: {name} dataset')
     plt.xlabel('Time [ms]')
@@ -83,12 +90,12 @@ def compared_plot(dataset,name, max_length=-1):
 time_a= time.time()
 
 
-#beat_plot(train_dataset,0,"Training",1000)
-#beat_plot(train_dataset,1,"Training",1000)
-#beat_plot(train_dataset,2,"Training",1000)
-#beat_plot(train_dataset,3,"Training",1000)
+beat_plot(train_dataset,0,"Training",1)
+beat_plot(train_dataset,1,"Training",1)
+beat_plot(train_dataset,2,"Training",1)
+beat_plot(train_dataset,3,"Training",1)
 
-compared_plot(train_dataset,"Training", 100)
+#compared_plot(train_dataset,"Training", 100)
 
 
 #log_plot_balance(train_dataset)

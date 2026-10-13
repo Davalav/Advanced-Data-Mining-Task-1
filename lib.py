@@ -492,7 +492,7 @@ class MITBIHDataset(Dataset):
     PyTorch Dataset for MIT-BIH Arrhythmia Database.
     Extracts 1D ECG beat segments centered on annotated R-peaks.
     """
-    def __init__(self, record_list, window_size=256, channel=0, offset=0):
+    def __init__(self, record_list, window_size=256, channel=0, offset=0, preprocessing=True):
         """
         Args:
             record_list (list): List of record IDs, e.g., ['100', '101', '102'].
@@ -505,10 +505,10 @@ class MITBIHDataset(Dataset):
         self.labels = []
         self.offset = offset
         self.signals = []
-        
-        self._load_data(record_list)
+        self.preprocessing= preprocessing
+        self._load_data(record_list, preprocessing)
 
-    def _load_data(self, record_list):
+    def _load_data(self, record_list, preprocessing):
         half_window = self.window_size // 2
         
         for record_name in record_list:
@@ -517,8 +517,9 @@ class MITBIHDataset(Dataset):
             annotation = wfdb.rdann(directory+record_name, 'atr')
             
             signal = record.p_signal[:, self.channel]
-            signal = butter_bandpass_filter(signal,lpf_cutoff,hpf_cutoff,record.fs)
-            signal = notch_filter(signal, 50, record.fs)
+            if preprocessing:
+                signal = butter_bandpass_filter(signal,lpf_cutoff,hpf_cutoff,record.fs)
+                signal = notch_filter(signal, 50, record.fs)
 
             last_sample_idx=-self.window_size
             
@@ -540,11 +541,12 @@ class MITBIHDataset(Dataset):
 
                     
                     # Apply Z-score normalization to each window individually
-                    std = np.std(segment)
-                    if std > 0:
-                        segment = (segment - np.mean(segment)) / std
-                    else:
-                        segment = segment - np.mean(segment)
+                    if preprocessing:
+                        std = np.std(segment)
+                        if std > 0:
+                            segment = (segment - np.mean(segment)) / std
+                        else:
+                            segment = segment - np.mean(segment)
                     
                     self.beats.append(segment)
                     self.labels.append(AAMI_MAPPING[symbol])
@@ -625,6 +627,18 @@ class BeatClassifierMLP(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+def model_size(model):
+    param_size = 0
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+    buffer_size = 0
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+    
+    size_all_mb = (param_size + buffer_size) / 1024**2
+    print('model size: {:.3f}MB'.format(size_all_mb))
+    return size_all_mb
 
 def select_features(train_dataset, n_features_to_select=None, direction='forward',
                      cv=3, scoring='f1_macro', estimator=None, n_jobs=-1, verbose=True):
