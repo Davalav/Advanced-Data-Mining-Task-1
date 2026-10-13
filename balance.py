@@ -97,6 +97,34 @@ class MITBIHDataset(Dataset):
 train_val_records = ['101', '106', '108', '109', '112', '114', '115', '116', '118', '119', '122', '124', '201', '203', '205', '207', '208', '209', '215', '220', '223', '230']
 test_records   = ['100', '103', '105', '111', '113', '117', '121', '123', '200', '202', '210', '212', '213', '214', '219', '221', '222', '228', '231', '232', '233', '234']
 
+def plot_beats_per_subject(record_list=None):
+    if record_list is None:
+        record_list = train_val_records + test_records
+
+    beats_per_subject = Counter()
+    for record_name in record_list:
+        annotation = wfdb.rdann(directory + record_name, 'atr')
+        subject = '201/202' if record_name in ('201', '202') else record_name
+        beats_per_subject[subject] += sum(
+            symbol in AAMI_MAPPING for symbol in annotation.symbol
+        )
+
+    subjects = sorted(
+        beats_per_subject,
+        key=lambda subject: 201 if subject == '201/202' else int(subject)
+    )
+    counts = [beats_per_subject[subject] for subject in subjects]
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(subjects, counts, color='skyblue', edgecolor='black')
+    plt.title('Number of beats per subject')
+    plt.xlabel('Subject')
+    plt.ylabel('Number of beats')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+    return beats_per_subject
+
 #
 # print("Train")
 #print(train_val_records[:int(train_val_split*len(train_val_records))])
@@ -131,6 +159,7 @@ def log_plot_balance(dataset):
     plt.show()
 
 log_plot_balance(full_dataset)
+plot_beats_per_subject()
 
 
 def print_plot_balance(dataset):
