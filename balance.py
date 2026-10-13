@@ -125,6 +125,38 @@ def plot_beats_per_subject(record_list=None):
     plt.show()
     return beats_per_subject
 
+def plot_signal_amplitude_distribution(record_list=None, channel=0, bins=100):
+    if record_list is None:
+        record_list = train_val_records + test_records
+    if not record_list:
+        raise ValueError("record_list must contain at least one record")
+
+    amplitude_min = float('inf')
+    amplitude_max = float('-inf')
+    for record_name in record_list:
+        record = wfdb.rdrecord(directory + record_name, channels=[channel])
+        signal = record.p_signal[:, 0]
+        amplitude_min = min(amplitude_min, float(np.min(signal)))
+        amplitude_max = max(amplitude_max, float(np.max(signal)))
+    amplitude_min=-3
+    amplitude_max=3
+    bin_edges = np.linspace(amplitude_min, amplitude_max, bins + 1)
+    counts = np.zeros(bins, dtype=np.int64)
+    for record_name in record_list:
+        record = wfdb.rdrecord(directory + record_name, channels=[channel])
+        signal = record.p_signal[:, 0]
+        counts += np.histogram(signal, bins=bin_edges)[0]
+    print(amplitude_min)
+    print(amplitude_max)
+    plt.figure(figsize=(10, 6))
+    plt.stairs(counts, bin_edges, fill=True, color='skyblue', edgecolor='black')
+    plt.title('ECG signal amplitude distribution')
+    plt.xlabel('Signal amplitude (mV)')
+    plt.ylabel('Number of samples')
+    plt.tight_layout()
+    plt.show()
+    return counts, bin_edges
+
 #
 # print("Train")
 #print(train_val_records[:int(train_val_split*len(train_val_records))])
@@ -160,6 +192,7 @@ def log_plot_balance(dataset):
 
 log_plot_balance(full_dataset)
 plot_beats_per_subject()
+plot_signal_amplitude_distribution()
 
 
 def print_plot_balance(dataset):
