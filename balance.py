@@ -157,6 +157,66 @@ def plot_signal_amplitude_distribution(record_list=None, channel=0, bins=100):
     plt.show()
     return counts, bin_edges
 
+def find_and_plot_noisy_beat(record_list=None, channel=0, window_size=100):
+    if record_list is None:
+        record_list = train_val_records + test_records
+    if not record_list:
+        raise ValueError("record_list must contain at least one record")
+    if window_size < 5:
+        raise ValueError("window_size must be at least 5 samples")
+
+    best_beat = None
+    best_info = None
+    best_noise_score = -1.0
+    half_window = window_size // 2
+    smoothing_kernel = np.ones(5) / 5
+
+    for record_name in record_list:
+        record = wfdb.rdrecord(directory + record_name, channels=[channel])
+        signal = record.p_signal[:, 0]
+        annotation = wfdb.rdann(directory + record_name, 'atr')
+
+        for sample_idx, symbol in zip(annotation.sample, annotation.symbol):
+            if symbol not in AAMI_MAPPING:
+                continue
+
+            start_idx = sample_idx - half_window
+            end_idx = start_idx + window_size
+            if start_idx < 0 or end_idx > len(signal):
+                continue
+
+            beat = signal[start_idx:end_idx]
+            padded_beat = np.pad(beat, (2, 2), mode='edge')
+            smoothed_beat = np.convolve(padded_beat, smoothing_kernel, mode='valid')
+            noise_score = float(np.sqrt(np.mean((beat - smoothed_beat) ** 2)))
+            if noise_score > best_noise_score:
+                best_beat = beat.copy()
+                best_info = (record_name, int(sample_idx), symbol)
+                best_noise_score = noise_score
+
+    if best_beat is None:
+        raise ValueError("No valid annotated beats found in the selected records")
+
+    time_ms = (np.arange(window_size) - half_window) / 360 * 1000
+    smoothed_beat = np.convolve(
+        np.pad(best_beat, (2, 2), mode='edge'),
+        smoothing_kernel,
+        mode='valid'
+    )
+    plt.figure(figsize=(10, 5))
+    plt.plot(time_ms, best_beat, label='ECG beat')
+    plt.plot(time_ms, smoothed_beat, label='Smoothed signal', linestyle='--')
+    plt.title(
+        f'Noisiest beat: record {best_info[0]}, sample {best_info[1]} '
+        f'(symbol {best_info[2]}, noise score {best_noise_score:.4f})'
+    )
+    plt.xlabel('Time relative to annotated beat (ms)')
+    plt.ylabel('Signal amplitude (mV)')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    return best_info, best_noise_score
+
 #
 # print("Train")
 #print(train_val_records[:int(train_val_split*len(train_val_records))])
@@ -193,6 +253,7 @@ def log_plot_balance(dataset):
 log_plot_balance(full_dataset)
 plot_beats_per_subject()
 plot_signal_amplitude_distribution()
+find_and_plot_noisy_beat()
 
 
 def print_plot_balance(dataset):
