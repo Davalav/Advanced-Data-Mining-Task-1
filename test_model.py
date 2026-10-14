@@ -51,6 +51,7 @@ if USE_FEATURE_SELECTION:
 
 elapsed_time=time.time()-time_A
 time_A=time.time()
+print(test_dataset[0])
 print(f"Feature selection took {lib.format_seconds(elapsed_time)}")
 
 test_loader   = DataLoader(test_dataset, batch_size=64, shuffle=False)

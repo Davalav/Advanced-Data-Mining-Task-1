@@ -20,7 +20,7 @@ start_time=time.time()
 time_a= time.time()
 window_size = 100
 offset = 0
-preprocessing = False
+preprocessing = True
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
 val_dataset   = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)
 test_dataset   = lib.MITBIHDataset(record_list=lib.test_records, window_size=window_size, channel=0, offset=offset, preprocessing=preprocessing)

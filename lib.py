@@ -226,7 +226,7 @@ class MITBIHFeatureDataset(Dataset):
             record_beats = []
             normal_segments, v_segments = [], []
             normal_segments2 = []
-
+            excluded_beats =0
             for i in range(n_beats):
                 sample_idx = samples[i]
                 symbol = symbols[i]
@@ -237,6 +237,7 @@ class MITBIHFeatureDataset(Dataset):
                 start_idx = sample_idx - half_window + self.offset
                 end_idx = sample_idx + half_window + self.offset
                 if start_idx < 0 or end_idx >= len(signal):
+                    excluded_beats=excluded_beats+1
                     continue
 
                 segment = signal[start_idx:end_idx]
@@ -305,6 +306,7 @@ class MITBIHFeatureDataset(Dataset):
 
         self.features = np.array(self.features, dtype=np.float32)
         self.labels = np.array(self.labels, dtype=np.int64)
+        print(f"Excluded beats: {excluded_beats}")
 
     # ------------------------------------------------------------------
     # Helpers
