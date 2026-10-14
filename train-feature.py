@@ -31,8 +31,8 @@ print(f"Is CUDA available? {torch.cuda.is_available()}")
 
 # 2. Instantiate PyTorch Datasets
 train_dataset = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size)
-val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
-test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
+val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, templates=train_dataset.templates, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
+test_dataset   = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, templates=train_dataset.templates, feature_mean=train_dataset.feature_mean, feature_std=train_dataset.feature_std,)
 elapsed_time=time.time()-start_time
 time_A=time.time()
 print(f"Dataset init took {lib.format_seconds(elapsed_time)}")

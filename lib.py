@@ -17,6 +17,8 @@ from scipy.stats import skew, kurtosis
 from ecgdetectors import Detectors
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 # Specify cutoff in Hertz
 lpf_cutoff = 0.5 
 hpf_cutoff = 20
@@ -127,14 +129,12 @@ class MITBIHFeatureDataset(Dataset):
     statistical, spectral, wavelet, dual-template-similarity, and
     optional second-lead features) for each annotated beat.
 
-    IMPORTANT - normalization:
-    Feature z-score stats (mean/std) are fit on THIS dataset's data unless
-    `feature_mean` / `feature_std` are explicitly passed in, in which case
-    those stats are used instead (and not re-fit). Always fit stats on the
-    TRAINING split only, then pass them into val/test dataset constructors:
+    IMPORTANT: Fit feature templates and normalization stats on the training
+    split only, then pass them into val/test dataset constructors:
 
         train_ds = MITBIHFeatureDataset(train_records)
         val_ds   = MITBIHFeatureDataset(val_records,
+                                         templates=train_ds.templates,
                                          feature_mean=train_ds.feature_mean,
                                          feature_std=train_ds.feature_std)
     """
@@ -143,7 +143,8 @@ class MITBIHFeatureDataset(Dataset):
                  normal_symbols=DEFAULT_NORMAL_SYMBOLS,
                  v_symbols=DEFAULT_V_SYMBOLS,
                  wavelet='db4', wavelet_level=3,
-                 normalize=True, feature_mean=None, feature_std=None):
+                 normalize=True, feature_mean=None, feature_std=None,
+                 templates=None):
         """
         Args:
             record_list (list): List of record IDs, e.g., ['100', '101', '102'].
@@ -156,9 +157,9 @@ class MITBIHFeatureDataset(Dataset):
                 zero-filled second-lead features automatically.
             offset (int): Sample offset applied to the window center.
             normal_symbols (tuple): Annotation symbols treated as "Normal"
-                when building the per-record normal-beat template.
+                when fitting the normal-beat template.
             v_symbols (tuple): Annotation symbols treated as "Ventricular"
-                when building the per-record ventricular-beat template.
+                when fitting the ventricular-beat template.
             wavelet (str): PyWavelets wavelet name for morphology features.
             wavelet_level (int): Decomposition level for wavelet features.
             normalize (bool): Whether to z-score normalize features.
@@ -166,6 +167,8 @@ class MITBIHFeatureDataset(Dataset):
                 these stats are used to transform features instead of
                 fitting new ones from this dataset (use train split's
                 stats for val/test datasets).
+            templates (dict or None): Pre-fitted feature templates. Pass
+                templates from the training dataset to val/test datasets.
         """
         self.window_size = window_size
         self.channel = channel
@@ -175,12 +178,14 @@ class MITBIHFeatureDataset(Dataset):
         self.v_symbols = set(v_symbols)
         self.wavelet = wavelet
         self.wavelet_level = wavelet_level
+        self.templates = templates
         self.features = []
         self.labels = []
         self.feature_names = None
 
         self._load_data(record_list)
 
+        self.raw_features = self.features.copy()
         self.feature_mean = None
         self.feature_std = None
         if normalize and len(self.features) > 0:
@@ -199,6 +204,11 @@ class MITBIHFeatureDataset(Dataset):
     # ------------------------------------------------------------------
     def _load_data(self, record_list):
         half_window = self.window_size // 2
+        record_beats_by_record = []
+        normal_segments, v_segments = [], []
+        normal_segments2 = []
+        all_segments = []
+        excluded_beats = 0
 
         for record_name in record_list:
             record = wfdb.rdrecord(directory + record_name)
@@ -224,9 +234,6 @@ class MITBIHFeatureDataset(Dataset):
 
             # ---- Pass 1: extract segments + RR features for this record ----
             record_beats = []
-            normal_segments, v_segments = [], []
-            normal_segments2 = []
-            excluded_beats =0
             for i in range(n_beats):
                 sample_idx = samples[i]
                 symbol = symbols[i]
@@ -237,7 +244,7 @@ class MITBIHFeatureDataset(Dataset):
                 start_idx = sample_idx - half_window + self.offset
                 end_idx = sample_idx + half_window + self.offset
                 if start_idx < 0 or end_idx >= len(signal):
-                    excluded_beats=excluded_beats+1
+                    excluded_beats += 1
                     continue
 
                 segment = signal[start_idx:end_idx]
@@ -266,30 +273,43 @@ class MITBIHFeatureDataset(Dataset):
                     compensatory_pause_ratio=compensatory_pause_ratio,
                 ))
 
-                if symbol in self.normal_symbols:
-                    normal_segments.append(segment)
-                    if has_ch2:
-                        normal_segments2.append(segment2)
-                elif symbol in self.v_symbols:
-                    v_segments.append(segment)
+                if self.templates is None:
+                    if symbol in self.normal_symbols:
+                        normal_segments.append(segment)
+                        if has_ch2:
+                            normal_segments2.append(segment2)
+                    elif symbol in self.v_symbols:
+                        v_segments.append(segment)
 
             if len(record_beats) == 0:
                 continue
 
-            all_segments = [b['segment'] for b in record_beats]
+            if self.templates is None:
+                all_segments.extend(b['segment'] for b in record_beats)
+            record_beats_by_record.append((record_beats, fs))
 
-            # Per-record templates. Each falls back to the record's overall
-            # mean beat if that symbol class wasn't observed in this record.
-            template_n = (np.mean(np.stack(normal_segments), axis=0)
-                          if normal_segments else np.mean(np.stack(all_segments), axis=0))
-            template_v = (np.mean(np.stack(v_segments), axis=0)
-                          if v_segments else np.mean(np.stack(all_segments), axis=0))
-            template_n2 = (np.mean(np.stack(normal_segments2), axis=0)
-                           if has_ch2 and normal_segments2 else None)
+        if self.templates is None and all_segments:
+            fallback_template = np.mean(np.stack(all_segments), axis=0)
+            self.templates = {
+                'normal': (np.mean(np.stack(normal_segments), axis=0)
+                           if normal_segments else fallback_template),
+                'ventricular': (np.mean(np.stack(v_segments), axis=0)
+                                if v_segments else fallback_template),
+                'normal_ch2': (np.mean(np.stack(normal_segments2), axis=0)
+                               if normal_segments2 else None),
+            }
 
+        if self.templates is not None:
+            template_n = self.templates['normal']
+            template_v = self.templates['ventricular']
+            template_n2 = self.templates['normal_ch2']
+        else:
+            template_n = template_v = template_n2 = None
+
+        for record_beats, fs in record_beats_by_record:
+            if template_n is None:
+                continue
             template_n_qrs_width = self._compute_qrs_width(template_n, fs)
-
-            # ---- Pass 2: finalize feature vectors using the templates ----
             for b in record_beats:
                 feature_vector, names = self._extract_features(
                     b['segment'], b['fs'], template_n, template_v,
@@ -645,8 +665,8 @@ def model_size(model):
 def select_features(train_dataset, n_features_to_select=None, direction='forward',
                      cv=3, scoring='f1_macro', estimator=None, n_jobs=-1, verbose=True):
     """
-    Fit sklearn's SequentialFeatureSelector on a (already feature-extracted
-    and normalized) training dataset and return the selected feature subset.
+    Fit sklearn's SequentialFeatureSelector on a training dataset and return
+    the selected feature subset. Scaling is fit separately within each CV fold.
 
     A lightweight sklearn estimator is used purely as a proxy scorer to
     rank feature subsets during selection - the actual downstream model can
@@ -661,9 +681,7 @@ def select_features(train_dataset, n_features_to_select=None, direction='forward
     information about those splits into the "feature engineering" step.
 
     Args:
-        train_dataset: a MITBIHFeatureDataset (train split), already built
-            (and ideally already normalized, since it's about to be fed to
-            LogisticRegression).
+        train_dataset: a MITBIHFeatureDataset (train split), already built.
         n_features_to_select (int, float, 'auto', or None): passed through
             to SequentialFeatureSelector. None defaults to half of the
             available features.
@@ -687,11 +705,12 @@ def select_features(train_dataset, n_features_to_select=None, direction='forward
         selected_names (list[str] or None): corresponding feature names,
             if train_dataset.feature_names is available.
     """
-    X = train_dataset.features
+    X = train_dataset.raw_features
     y = train_dataset.labels
 
     if estimator is None:
         estimator = LogisticRegression(max_iter=1000, class_weight='balanced')
+    estimator = make_pipeline(StandardScaler(), estimator)
 
     if n_features_to_select is None:
         n_features_to_select = max(1, X.shape[1] // 2)
@@ -731,6 +750,7 @@ def apply_feature_selection(dataset, selected_indices):
     train) to val/test datasets.
     """
     dataset.features = dataset.features[:, selected_indices]
+    dataset.raw_features = dataset.raw_features[:, selected_indices]
     if dataset.feature_names is not None:
         dataset.feature_names = [dataset.feature_names[i] for i in selected_indices]
     if dataset.feature_mean is not None:
