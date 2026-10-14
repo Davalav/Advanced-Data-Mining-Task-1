@@ -112,7 +112,7 @@ print(f"Using device: {device}")
 input_dim = train_dataset.features.shape[1]
 num_classes = len(np.unique(train_dataset.labels))
 
-
+print(f"input dim {input_dim}")
 model = lib.BeatClassifierMLP(input_dim=input_dim, num_classes=num_classes).to(device)
 
 # Handle class imbalance (common in MIT-BIH: normal beats dominate)
