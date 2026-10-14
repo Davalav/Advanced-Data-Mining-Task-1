@@ -11,9 +11,20 @@ import time
 from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import copy
+import random
 from collections import Counter
 import lib
 from torch.utils.data import WeightedRandomSampler
+
+SEED = 42
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 start_time=time.time()
 
 window_size=100
@@ -67,7 +78,8 @@ sample_weights = 1.0 / np.sqrt(class_counts[labels])
 sampler = WeightedRandomSampler(
 sample_weights,
 len(sample_weights),
-replacement=True
+replacement=True,
+generator=torch.Generator().manual_seed(SEED),
 )
 
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=False, sampler=sampler)
