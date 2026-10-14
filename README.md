@@ -5,7 +5,7 @@ Current best: [BeatClassifierMLP](models/BeatClassifierMLP-0.9080-0.8743-14_50_2
 
 Best CM:
 
-![Test Confusion Matrix](Best_CM.png)
+![Test Confusion Matrix](images/best_currently/Best_CM.png)
 
 ```
 {
@@ -38,11 +38,11 @@ Supraventricular (S)     0.1372    0.3413    0.1957      1837
         weighted avg     0.9311    0.8743    0.8989     49700
 ```
 
-![Training graph](Best_training.png)
+![Training graph](images/best_currently/Best_training.png)
 
-![Validation graph](Best_val_loss.png)
+![Validation graph](images/best_currently/Best_val_loss.png)
 
-![Validation F1 Macro](Best_f1_macro.png)
+![Validation F1 Macro](images/best_currently/Best_f1_macro.png)
 
 ## Analysis
 [Analysis document](analysis.md)
