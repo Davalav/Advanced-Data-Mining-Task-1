@@ -97,7 +97,25 @@ beat_plot(train_dataset,3,"Training",1)
 
 #compared_plot(train_dataset,"Training", 100)
 
+def count_elements_per_class(train_dataset, val_dataset, test_dataset):
+    """Count the number of elements in each class for all dataset splits."""
+    datasets = {
+        "train": train_dataset,
+        "validation": val_dataset,
+        "test": test_dataset,
+    }
+    class_counts = {}
 
+    for dataset_name, dataset in datasets.items():
+        counts = Counter(dataset.labels)
+        class_counts[dataset_name] = {
+            class_name: counts[class_index]
+            for class_index, class_name in enumerate(lib.CLASS_NAMES)
+        }
+
+    return class_counts
+
+print(count_elements_per_class(train_dataset, val_dataset, test_dataset))
 #log_plot_balance(train_dataset)
 elapsed_time=time.time()-time_a
 print(f"Individual beat plots took {lib.format_seconds(elapsed_time)}")

@@ -158,7 +158,6 @@ def find_and_plot_noisy_beat(record_list=None, channel=0, window_size=100):
 #test_dataset   = MITBIHDataset(record_list=test_records, window_size=256)
 full_dataset = lib.MITBIHDataset(record_list=lib.train_val_records+lib.test_records, window_size=100)
 
-
 # 3. Create PyTorch DataLoaders
 #train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 #val_loader   = DataLoader(val_dataset, batch_size=64, shuffle=False)
