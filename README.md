@@ -1,6 +1,6 @@
-#Advanced-Data-Mining-Task-1
+# Advanced-Data-Mining-Task-1
 
-##Best current result
+## Best current result
 Current best: [BeatClassifierMLP](models/BeatClassifierMLP-0.9080-0.8743-14_50_2026-09-24-18_02_04.pth)
 
 Best CM:
@@ -44,12 +44,12 @@ Supraventricular (S)     0.1372    0.3413    0.1957      1837
 
 ![Validation F1 Macro](Best_f1_macro.png)
 
-##Analysis
+## Analysis
 [Analysis document](analysis.md)
 
-##Installation
+## Installation
 
-###Conda
+### Conda
 conda create -n d7043e python=3.11.14
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
 pip install torchshow
@@ -57,7 +57,7 @@ pip install scikit-learn
 pip install wfdb
 pip install PyWavelets
 
-###Dataset
+### Dataset
 [Mit-BIH Arrhythmia Database](https://www.physionet.org/content/mitdb/1.0.0/)
 Placed in folder above: ../mit-bih-arrhythmia-database-1.0.0
 [MIT-BIH Noise Stress Test Database](https://www.physionet.org/content/nstdb/1.0.0/)
