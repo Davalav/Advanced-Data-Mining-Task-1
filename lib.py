@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
@@ -55,7 +56,7 @@ AAMI_MAPPING = {
 }
 CLASS_NAMES = ['Normal (N)', 'Supraventricular (S)', 'Ventricular (V)', 'Fusion (F)']#, 'Unknown (Q)']
 
-directory = "../mit-bih-arrhythmia-database-1.0.0/"
+directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mit-bih-arrhythmia-database-1.0.0") + os.sep
 
 def compute_class_weights(labels, num_classes=5):
     """
