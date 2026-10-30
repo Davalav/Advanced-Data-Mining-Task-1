@@ -5,6 +5,8 @@ import os
 import numpy as np
 import lib
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
 
 SEED = 42
@@ -69,10 +71,13 @@ def evaluate(model, X, y, name):
     print(confusion_matrix(y, y_pred))
     return acc, f1
 
-
-# ------------------ Logistic Regression -----------------
-# Utvärderas på validering (DS1). Testdatan (DS2) körs först när baslinjen är låst.
+models = {
+    "Logistic Regression": lambda: LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED),
+    "Random Forest":       lambda: RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=SEED, n_jobs=-1),
+    "SVM":                 lambda: LinearSVC(class_weight='balanced', random_state=SEED),
+}
 for X_tr, X_v, label in [(X_train, X_val, "44 features"), (X_train_5, X_val_5, "5 features")]:
-    log_reg = LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED)
-    log_reg.fit(X_tr, y_train)
-    evaluate(log_reg, X_v, y_val, f"Logistic Regression, {label} (validering)")
+    for name, make_model in models.items():
+        model = make_model()
+        model.fit(X_tr, y_train)
+        evaluate(model, X_v, y_val, f"{name}, {label} (validering)")
