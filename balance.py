@@ -17,7 +17,7 @@ print(f"Python version: {torch.sys.version.split()[0]}")
 print(f"PyTorch version: {torch.__version__}")
 print(f"Is CUDA available? {torch.cuda.is_available()}")
 
-directory = "../mit-bih-arrhythmia-database-1.0.0/"
+directory = lib.directory
 CLASS_NAMES = ['Normal (N)', 'Supraventricular (S)', 'Ventricular (V)', 'Fusion (F)', 'Unknown (Q)']
 # Mapping MIT-BIH symbols to standard 5 AAMI classes
 AAMI_MAPPING = {

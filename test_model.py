@@ -22,7 +22,7 @@ offset = 10
 
 model = lib.BeatClassifierMLP(input_dim=input_dim, num_classes=num_classes).to(device)
 if len(sys.argv) >1:
-    model.load_state_dict(torch.load(sys.argv[1]))
+    model.load_state_dict(torch.load(sys.argv[1], map_location=device))
 else:
     raise Exception("Missing file argument")
 lib.model_size(model)
