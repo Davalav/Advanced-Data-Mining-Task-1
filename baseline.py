@@ -17,7 +17,7 @@ window_size = 100
 offset = 0
 
 # Sätt till True först när valet av baslinje är låst
-RUN_TEST = False
+RUN_TEST = True
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CACHE_FILE = os.path.join(HERE, f"features_cache_w{window_size}_o{offset}.npz")
