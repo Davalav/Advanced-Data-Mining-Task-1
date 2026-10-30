@@ -3,54 +3,49 @@
 
 import os
 import numpy as np
+import pandas as pd
 import lib
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
+from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
+                             classification_report, confusion_matrix)
 
 SEED = 42
 np.random.seed(SEED)
 window_size = 100
 offset = 0
-CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"features_cache_w{window_size}_o{offset}.npz")
+
+# Sätt till True först när valet av baslinje är låst
+RUN_TEST = False
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+CACHE_FILE = os.path.join(HERE, f"features_cache_w{window_size}_o{offset}.npz")
+RESULTS_FILE = os.path.join(HERE, "results", "baseline_metrics.csv")
 
 
-def load_features():
-    """Läser features från cache om den finns, annars byggs de och sparas."""
-    if os.path.exists(CACHE_FILE):
-        print(f"Laddar features från {CACHE_FILE}")
-        data = np.load(CACHE_FILE)
-        return (data["X_train"], data["y_train"],
-                data["X_val"], data["y_val"],
-                data["X_test"], data["y_test"],
-                list(data["feature_names"]))
-
-    print("Ingen cache hittad, bygger features (tar ca 1,5 min)...")
-    train_dataset = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
-    val_dataset   = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, offset=offset,
-                                             templates=train_dataset.templates,
-                                             feature_mean=train_dataset.feature_mean,
-                                             feature_std=train_dataset.feature_std)
-    test_dataset  = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, offset=offset,
-                                             templates=train_dataset.templates,
-                                             feature_mean=train_dataset.feature_mean,
-                                             feature_std=train_dataset.feature_std)
-
+def build_cache():
+    print("Bygger features (tar ca 1,5 min)...")
+    train = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
+    val = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, offset=offset,
+                                   templates=train.templates, feature_mean=train.feature_mean, feature_std=train.feature_std)
+    test = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, offset=offset,
+                                    templates=train.templates, feature_mean=train.feature_mean, feature_std=train.feature_std)
     np.savez(CACHE_FILE,
-             X_train=train_dataset.features, y_train=train_dataset.labels,
-             X_val=val_dataset.features,     y_val=val_dataset.labels,
-             X_test=test_dataset.features,   y_test=test_dataset.labels,
-             feature_names=np.array(train_dataset.feature_names))
-    print(f"Sparade features till {CACHE_FILE}")
-
-    return (train_dataset.features, train_dataset.labels,
-            val_dataset.features, val_dataset.labels,
-            test_dataset.features, test_dataset.labels,
-            train_dataset.feature_names)
+             X_train=train.features, y_train=train.labels,
+             X_val=val.features, y_val=val.labels,
+             X_test=test.features, y_test=test.labels,
+             feature_names=train.feature_names)
 
 
-X_train, y_train, X_val, y_val, X_test, y_test, feature_names = load_features()
+if not os.path.exists(CACHE_FILE):
+    build_cache()
+
+data = np.load(CACHE_FILE)
+X_train, y_train = data["X_train"], data["y_train"]
+X_val, y_val = data["X_val"], data["y_val"]
+X_test, y_test = data["X_test"], data["y_test"]
+feature_names = list(data["feature_names"])
 
 print(X_train.shape, X_val.shape, X_test.shape)   # t.ex. (41246, 44) (9763, 44) (49700, 44)
 
@@ -60,24 +55,41 @@ X_train_5, X_val_5, X_test_5 = X_train[:, idx], X_val[:, idx], X_test[:, idx]
 
 
 def evaluate(model, X, y, name):
-    """Skriver ut accuracy, F1 macro och per-klass-resultat för en tränad modell."""
     y_pred = model.predict(X)
-    acc = accuracy_score(y, y_pred)
-    f1 = f1_score(y, y_pred, average='macro')
     print(f"\n--- {name} ---")
-    print(f"Accuracy: {acc * 100:.2f}% - F1 Macro: {f1 * 100:.2f}%")
     print(classification_report(y, y_pred, target_names=lib.CLASS_NAMES, digits=4, zero_division=0))
-    print("Confusion matrix (rader = sann klass, kolumner = predikterad):")
     print(confusion_matrix(y, y_pred))
-    return acc, f1
+
+    result = {
+        "accuracy": accuracy_score(y, y_pred),
+        "f1_macro": f1_score(y, y_pred, average='macro'),
+    }
+    precision, recall, f1, _ = precision_recall_fscore_support(y, y_pred, labels=[0, 1, 2, 3], zero_division=0)
+    for i, cls in enumerate(["N", "S", "V", "F"]):
+        result[f"precision_{cls}"] = precision[i]
+        result[f"recall_{cls}"] = recall[i]
+        result[f"f1_{cls}"] = f1[i]
+    return result
+
 
 models = {
-    "Logistic Regression": lambda: LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED),
-    "Random Forest":       lambda: RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=SEED, n_jobs=-1),
-    "SVM":                 lambda: LinearSVC(class_weight='balanced', random_state=SEED),
+    "Logistic Regression": LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED),
+    "Random Forest": RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=SEED, n_jobs=-1),
+    "SVM": LinearSVC(class_weight='balanced', random_state=SEED),
 }
-for X_tr, X_v, label in [(X_train, X_val, "44 features"), (X_train_5, X_val_5, "5 features")]:
-    for name, make_model in models.items():
-        model = make_model()
+
+results = []
+for n_features, X_tr, X_v, X_te in [(44, X_train, X_val, X_test), (5, X_train_5, X_val_5, X_test_5)]:
+    for name, model in models.items():
         model.fit(X_tr, y_train)
-        evaluate(model, X_v, y_val, f"{name}, {label} (validering)")
+
+        result = evaluate(model, X_v, y_val, f"{name}, {n_features} features (val)")
+        results.append({"model": name, "features": n_features, "split": "val", **result})
+
+        if RUN_TEST:
+            result = evaluate(model, X_te, y_test, f"{name}, {n_features} features (test)")
+            results.append({"model": name, "features": n_features, "split": "test", **result})
+
+os.makedirs(os.path.dirname(RESULTS_FILE), exist_ok=True)
+pd.DataFrame(results).round(4).to_csv(RESULTS_FILE, index=False)
+print(f"\nSparade resultat till {RESULTS_FILE}")
