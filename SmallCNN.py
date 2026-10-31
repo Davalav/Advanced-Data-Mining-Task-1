@@ -15,6 +15,7 @@ import lib
 from experiment_log import save_experiment
 
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
+LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -51,7 +52,7 @@ class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
 criterion = nn.CrossEntropyLoss(weight=class_weights)
-optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
 epochs = 100
 
 start_time = time.time()
@@ -114,4 +115,4 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"f1_{cls}"] = f1[i]
 
 save_experiment(result)
-torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}.pth"))
+torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}.pth"))
