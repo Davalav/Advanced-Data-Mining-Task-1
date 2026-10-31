@@ -1,0 +1,2 @@
+model,features,split,accuracy,f1_macro,precision_N,recall_N,f1_N,precision_S,recall_S,f1_S,precision_V,recall_V,f1_V,precision_F,recall_F,f1_F
+MLP,5,val,0.9101,0.3637,0.9649,0.9811,0.9729,0.0241,0.0291,0.0264,0.629,0.345,0.4456,0.0058,0.037,0.0101

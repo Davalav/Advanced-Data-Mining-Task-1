@@ -1,0 +1,2 @@
+model,features,split,accuracy,f1_macro,precision_N,recall_N,f1_N,precision_S,recall_S,f1_S,precision_V,recall_V,f1_V,precision_F,recall_F,f1_F
+Small CNN,raw,val,0.8257,0.4184,0.9404,0.8677,0.9026,0.0641,0.1214,0.0839,0.895,0.5512,0.6822,0.0025,0.0741,0.0048
