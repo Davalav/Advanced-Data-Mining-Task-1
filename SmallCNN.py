@@ -7,7 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
@@ -16,6 +16,8 @@ from experiment_log import save_experiment
 
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
 LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
+USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
+USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -33,7 +35,15 @@ y_train = torch.tensor(train_dataset.labels)
 X_val = torch.tensor(val_dataset.beats).unsqueeze(1)
 y_val = val_dataset.labels
 
-train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
+class_counts = np.bincount(train_dataset.labels)
+
+if USE_SAMPLER:
+    sample_weights = 1.0 / np.sqrt(class_counts[train_dataset.labels])
+    sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True,
+                                    generator=torch.Generator().manual_seed(SEED))
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, sampler=sampler)
+else:
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
 
 model = nn.Sequential(
     nn.Conv1d(1, 8, kernel_size=5, padding=2),
@@ -47,11 +57,10 @@ model = nn.Sequential(
 )
 
 # Samma klassviktning som i MultilayerPerceptron.py
-class_counts = np.bincount(train_dataset.labels)
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
-criterion = nn.CrossEntropyLoss(weight=class_weights)
+criterion = nn.CrossEntropyLoss(weight=class_weights if USE_CLASS_WEIGHTS else None)
 optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
 epochs = 100
 
@@ -100,8 +109,8 @@ result = {
     "lr": optimizer.defaults["lr"],
     "batch_size": train_loader.batch_size,
     "epochs": epochs,
-    "class_weights": True,
-    "sampler": False,
+    "class_weights": USE_CLASS_WEIGHTS,
+    "sampler": USE_SAMPLER,
     "n_parameters": sum(p.numel() for p in model.parameters()),
     "best_epoch": best_epoch,
     "train_seconds": train_seconds,
@@ -115,4 +124,4 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"f1_{cls}"] = f1[i]
 
 save_experiment(result)
-torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}.pth"))
+torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}.pth"))
