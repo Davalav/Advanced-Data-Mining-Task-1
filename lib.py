@@ -122,6 +122,11 @@ except ImportError:
 DEFAULT_NORMAL_SYMBOLS = ('N', 'L', 'R', 'e', 'j')
 DEFAULT_V_SYMBOLS = ('V', 'E')
 
+# Annotation symbols that mark real heart activity. RR intervals are measured
+# between these only, since rhythm, noise and comment annotations are not beats.
+RR_BEAT_SYMBOLS = ('N', 'L', 'R', 'B', 'A', 'a', 'J', 'S', 'V', 'r', 'F', 'e',
+                   'j', 'n', 'E', '/', 'f', 'Q', '?', '!')
+
 
 class MITBIHFeatureDataset(Dataset):
     """
@@ -231,11 +236,13 @@ class MITBIHFeatureDataset(Dataset):
 
             samples = annotation.sample
             symbols = annotation.symbol
-            n_beats = len(samples)
+            n_annotations = len(samples)
+            beat_samples = samples[np.isin(symbols, RR_BEAT_SYMBOLS)]
+            n_beats = len(beat_samples)
 
             # ---- Pass 1: extract segments + RR features for this record ----
             record_beats = []
-            for i in range(n_beats):
+            for i in range(n_annotations):
                 sample_idx = samples[i]
                 symbol = symbols[i]
 
@@ -251,10 +258,11 @@ class MITBIHFeatureDataset(Dataset):
                 segment = signal[start_idx:end_idx]
                 segment2 = signal2[start_idx:end_idx] if has_ch2 else None
 
-                pre_rr = (sample_idx - samples[i - 1]) / fs if i > 0 else np.nan
-                post_rr = (samples[i + 1] - sample_idx) / fs if i < n_beats - 1 else np.nan
+                beat_pos = np.searchsorted(beat_samples, sample_idx)
+                pre_rr = (sample_idx - beat_samples[beat_pos - 1]) / fs if beat_pos > 0 else np.nan
+                post_rr = (beat_samples[beat_pos + 1] - sample_idx) / fs if beat_pos < n_beats - 1 else np.nan
 
-                local_window = samples[max(0, i - 5):min(n_beats, i + 6)]
+                local_window = beat_samples[max(0, beat_pos - 5):min(n_beats, beat_pos + 6)]
                 local_rr_avg = np.mean(np.diff(local_window)) / fs if len(local_window) > 1 else np.nan
 
                 if np.isnan(pre_rr):
