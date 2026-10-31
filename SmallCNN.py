@@ -18,6 +18,7 @@ SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
 LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
 USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
 USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
+USE_RR = sys.argv[5] == "1" if len(sys.argv) > 5 else False
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -35,6 +36,19 @@ y_train = torch.tensor(train_dataset.labels)
 X_val = torch.tensor(val_dataset.beats).unsqueeze(1)
 y_val = val_dataset.labels
 
+if USE_RR:
+    cache = np.load(os.path.join(HERE, "features_cache_w100_o0.npz"))
+    feature_names = list(cache["feature_names"])
+    rr_idx = [feature_names.index("pre_rr"), feature_names.index("post_rr")]
+
+    def add_rr_channels(X, features):
+        rr = torch.tensor(features[:, rr_idx], dtype=torch.float32)
+        rr = rr.unsqueeze(2).repeat(1, 1, X.shape[2])
+        return torch.cat([X, rr], dim=1)
+
+    X_train = add_rr_channels(X_train, cache["X_train"])
+    X_val = add_rr_channels(X_val, cache["X_val"])
+
 class_counts = np.bincount(train_dataset.labels)
 
 if USE_SAMPLER:
@@ -46,7 +60,7 @@ else:
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
 
 model = nn.Sequential(
-    nn.Conv1d(1, 8, kernel_size=5, padding=2),
+    nn.Conv1d(3 if USE_RR else 1, 8, kernel_size=5, padding=2),
     nn.ReLU(),
     nn.MaxPool1d(2),
     nn.Conv1d(8, 16, kernel_size=5, padding=2),
@@ -103,7 +117,7 @@ print(confusion_matrix(y_val, y_pred))
 
 result = {
     "model": "Small CNN",
-    "features": "raw",
+    "features": "raw+rr" if USE_RR else "raw",
     "split": "val",
     "seed": SEED,
     "lr": optimizer.defaults["lr"],
@@ -124,4 +138,4 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"f1_{cls}"] = f1[i]
 
 save_experiment(result)
-torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}.pth"))
+torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}-rr{int(USE_RR)}.pth"))
