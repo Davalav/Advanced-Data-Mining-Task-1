@@ -1,8 +1,9 @@
 import copy
+import sys
+import time
 import os
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,8 +12,9 @@ from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_s
                              classification_report, confusion_matrix)
 
 import lib
+from experiment_log import save_experiment
 
-SEED = 42
+SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -20,7 +22,6 @@ window_size = 100
 offset = 0
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS_FILE = os.path.join(HERE, "results", "cnn_metrics.csv")
 MODELS_DIR = os.path.join(HERE, "models")
 
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
@@ -53,6 +54,7 @@ criterion = nn.CrossEntropyLoss(weight=class_weights)
 optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
 epochs = 100
 
+start_time = time.time()
 best_f1 = -1
 best_epoch = -1
 best_state = None
@@ -80,6 +82,7 @@ for epoch in range(epochs):
 
 print(f"\nBästa epok: {best_epoch}, Val F1 macro: {best_f1 * 100:.2f}%")
 
+train_seconds = time.time() - start_time
 model.load_state_dict(best_state)
 model.eval()
 with torch.no_grad():
@@ -92,6 +95,15 @@ result = {
     "model": "Small CNN",
     "features": "raw",
     "split": "val",
+    "seed": SEED,
+    "lr": optimizer.defaults["lr"],
+    "batch_size": train_loader.batch_size,
+    "epochs": epochs,
+    "class_weights": True,
+    "sampler": False,
+    "n_parameters": sum(p.numel() for p in model.parameters()),
+    "best_epoch": best_epoch,
+    "train_seconds": train_seconds,
     "accuracy": accuracy_score(y_val, y_pred),
     "f1_macro": f1_score(y_val, y_pred, average='macro'),
 }
@@ -101,5 +113,5 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"recall_{cls}"] = recall[i]
     result[f"f1_{cls}"] = f1[i]
 
-pd.DataFrame([result]).round(4).to_csv(RESULTS_FILE, index=False)
+save_experiment(result)
 torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}.pth"))
