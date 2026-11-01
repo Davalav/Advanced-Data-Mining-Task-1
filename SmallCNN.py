@@ -1,18 +1,25 @@
 import copy
+import sys
+import time
 import os
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
 import lib
+from experiment_log import save_experiment
 
-SEED = 42
+SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
+LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
+USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
+USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
+USE_RR = sys.argv[5] == "1" if len(sys.argv) > 5 else False
+FILTERS = [int(f) for f in sys.argv[6].split(",")] if len(sys.argv) > 6 else [8, 16]
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -20,7 +27,6 @@ window_size = 100
 offset = 0
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS_FILE = os.path.join(HERE, "results", "cnn_metrics.csv")
 MODELS_DIR = os.path.join(HERE, "models")
 
 train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
@@ -31,28 +37,48 @@ y_train = torch.tensor(train_dataset.labels)
 X_val = torch.tensor(val_dataset.beats).unsqueeze(1)
 y_val = val_dataset.labels
 
-train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
+if USE_RR:
+    cache = np.load(os.path.join(HERE, "features_cache_w100_o0.npz"))
+    feature_names = list(cache["feature_names"])
+    rr_idx = [feature_names.index("pre_rr"), feature_names.index("post_rr")]
 
-model = nn.Sequential(
-    nn.Conv1d(1, 8, kernel_size=5, padding=2),
-    nn.ReLU(),
-    nn.MaxPool1d(2),
-    nn.Conv1d(8, 16, kernel_size=5, padding=2),
-    nn.ReLU(),
-    nn.MaxPool1d(2),
-    nn.Flatten(),
-    nn.Linear(16 * 25, 4),
-)
+    def add_rr_channels(X, features):
+        rr = torch.tensor(features[:, rr_idx], dtype=torch.float32)
+        rr = rr.unsqueeze(2).repeat(1, 1, X.shape[2])
+        return torch.cat([X, rr], dim=1)
+
+    X_train = add_rr_channels(X_train, cache["X_train"])
+    X_val = add_rr_channels(X_val, cache["X_val"])
+
+class_counts = np.bincount(train_dataset.labels)
+
+if USE_SAMPLER:
+    sample_weights = 1.0 / np.sqrt(class_counts[train_dataset.labels])
+    sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True,
+                                    generator=torch.Generator().manual_seed(SEED))
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, sampler=sampler)
+else:
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
+
+layers = []
+in_channels = X_train.shape[1]
+length = X_train.shape[2]
+for out_channels in FILTERS:
+    layers += [nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2), nn.ReLU(), nn.MaxPool1d(2)]
+    in_channels = out_channels
+    length //= 2
+
+model = nn.Sequential(*layers, nn.Flatten(), nn.Linear(in_channels * length, 4))
 
 # Samma klassviktning som i MultilayerPerceptron.py
-class_counts = np.bincount(train_dataset.labels)
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
-criterion = nn.CrossEntropyLoss(weight=class_weights)
-optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
+criterion = nn.CrossEntropyLoss(weight=class_weights if USE_CLASS_WEIGHTS else None)
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
 epochs = 100
 
+start_time = time.time()
 best_f1 = -1
 best_epoch = -1
 best_state = None
@@ -80,6 +106,7 @@ for epoch in range(epochs):
 
 print(f"\nBästa epok: {best_epoch}, Val F1 macro: {best_f1 * 100:.2f}%")
 
+train_seconds = time.time() - start_time
 model.load_state_dict(best_state)
 model.eval()
 with torch.no_grad():
@@ -90,8 +117,17 @@ print(confusion_matrix(y_val, y_pred))
 
 result = {
     "model": "Small CNN",
-    "features": "raw",
+    "features": "raw+rr" if USE_RR else "raw",
     "split": "val",
+    "seed": SEED,
+    "lr": optimizer.defaults["lr"],
+    "batch_size": train_loader.batch_size,
+    "epochs": epochs,
+    "class_weights": USE_CLASS_WEIGHTS,
+    "sampler": USE_SAMPLER,
+    "n_parameters": sum(p.numel() for p in model.parameters()),
+    "best_epoch": best_epoch,
+    "train_seconds": train_seconds,
     "accuracy": accuracy_score(y_val, y_pred),
     "f1_macro": f1_score(y_val, y_pred, average='macro'),
 }
@@ -101,5 +137,5 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"recall_{cls}"] = recall[i]
     result[f"f1_{cls}"] = f1[i]
 
-pd.DataFrame([result]).round(4).to_csv(RESULTS_FILE, index=False)
-torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}.pth"))
+save_experiment(result)
+torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}-rr{int(USE_RR)}-filters{'-'.join(map(str, FILTERS))}.pth"))

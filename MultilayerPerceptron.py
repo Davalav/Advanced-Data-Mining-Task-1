@@ -1,18 +1,23 @@
 import copy
+import sys
+import time
 import os
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
 import lib
+from experiment_log import save_experiment
 
-SEED = 42
+SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
+LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.001
+USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
+USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -28,7 +33,15 @@ y_train = torch.tensor(data["y_train"], dtype=torch.long)
 X_val = torch.tensor(data["X_val"][:, idx], dtype=torch.float32)
 y_val = data["y_val"]
 
-train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
+class_counts = np.bincount(data["y_train"])
+
+if USE_SAMPLER:
+    sample_weights = 1.0 / np.sqrt(class_counts[data["y_train"]])
+    sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True,
+                                    generator=torch.Generator().manual_seed(SEED))
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, sampler=sampler)
+else:
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
 
 model = nn.Sequential(
     nn.Linear(5, 32),
@@ -37,14 +50,14 @@ model = nn.Sequential(
 )
 
 # Samma klassviktning som i train-feature.py
-class_counts = np.bincount(data["y_train"])
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
-criterion = nn.CrossEntropyLoss(weight=class_weights)
-optimizer = optim.SGD(model.parameters(), lr=0.02, momentum=0.9)
+criterion = nn.CrossEntropyLoss(weight=class_weights if USE_CLASS_WEIGHTS else None)
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
 epochs = 100
 
+start_time = time.time()
 best_f1 = -1
 best_epoch = -1
 best_state = None
@@ -72,6 +85,7 @@ for epoch in range(epochs):
 
 print(f"\nBästa epok: {best_epoch}, Val F1 macro: {best_f1 * 100:.2f}%")
 
+train_seconds = time.time() - start_time
 model.load_state_dict(best_state)
 model.eval()
 with torch.no_grad():
@@ -82,8 +96,17 @@ print(confusion_matrix(y_val, y_pred))
 
 result = {
     "model": "MLP",
-    "features": len(idx),
+    "features": str(len(idx)),
     "split": "val",
+    "seed": SEED,
+    "lr": optimizer.defaults["lr"],
+    "batch_size": train_loader.batch_size,
+    "epochs": epochs,
+    "class_weights": USE_CLASS_WEIGHTS,
+    "sampler": USE_SAMPLER,
+    "n_parameters": sum(p.numel() for p in model.parameters()),
+    "best_epoch": best_epoch,
+    "train_seconds": train_seconds,
     "accuracy": accuracy_score(y_val, y_pred),
     "f1_macro": f1_score(y_val, y_pred, average='macro'),
 }
@@ -93,5 +116,5 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"recall_{cls}"] = recall[i]
     result[f"f1_{cls}"] = f1[i]
 
-pd.DataFrame([result]).round(4).to_csv(os.path.join(HERE, "results", "mlp_metrics.csv"), index=False)
-torch.save(best_state, os.path.join(HERE, "models", f"MLP-valF1-{best_f1:.4f}-seed{SEED}.pth"))
+save_experiment(result)
+torch.save(best_state, os.path.join(HERE, "models", f"MLP-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}.pth"))
