@@ -19,6 +19,7 @@ LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
 USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
 USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
 USE_RR = sys.argv[5] == "1" if len(sys.argv) > 5 else False
+FILTERS = [int(f) for f in sys.argv[6].split(",")] if len(sys.argv) > 6 else [8, 16]
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
@@ -59,16 +60,15 @@ if USE_SAMPLER:
 else:
     train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
 
-model = nn.Sequential(
-    nn.Conv1d(3 if USE_RR else 1, 8, kernel_size=5, padding=2),
-    nn.ReLU(),
-    nn.MaxPool1d(2),
-    nn.Conv1d(8, 16, kernel_size=5, padding=2),
-    nn.ReLU(),
-    nn.MaxPool1d(2),
-    nn.Flatten(),
-    nn.Linear(16 * 25, 4),
-)
+layers = []
+in_channels = X_train.shape[1]
+length = X_train.shape[2]
+for out_channels in FILTERS:
+    layers += [nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2), nn.ReLU(), nn.MaxPool1d(2)]
+    in_channels = out_channels
+    length //= 2
+
+model = nn.Sequential(*layers, nn.Flatten(), nn.Linear(in_channels * length, 4))
 
 # Samma klassviktning som i MultilayerPerceptron.py
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
@@ -138,4 +138,4 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"f1_{cls}"] = f1[i]
 
 save_experiment(result)
-torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}-rr{int(USE_RR)}.pth"))
+torch.save(best_state, os.path.join(MODELS_DIR, f"SmallCNN-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}-rr{int(USE_RR)}-filters{'-'.join(map(str, FILTERS))}.pth"))
