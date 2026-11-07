@@ -62,3 +62,16 @@ pip install PyWavelets
 Placed in folder above: ../mit-bih-arrhythmia-database-1.0.0  
 [MIT-BIH Noise Stress Test Database](https://www.physionet.org/content/nstdb/1.0.0/)  
 Placed in folder above: ../mit-bih-noise-stress-test-database-1.0.0
+
+Both databases are downloaded as ZIP files from PhysioNet ("Download the ZIP file" under Files) and unpacked in the folder above the repo:
+
+```
+curl -L -o mitdb.zip https://physionet.org/content/mitdb/get-zip/1.0.0/
+curl -L -o nstdb.zip https://physionet.org/content/nstdb/get-zip/1.0.0/
+unzip mitdb.zip -d ..
+unzip nstdb.zip -d ..
+```
+
+Each folder contains `SHA256SUMS.txt`. Running `sha256sum -c SHA256SUMS.txt` inside the folder checks that all files are intact.
+
+The noise test only uses the noise records `bw`, `em` and `ma` from the Noise Stress Test Database. The ready-made noisy records `118e*` and `119e*` are not used, since records 118 and 119 are part of the training data.
