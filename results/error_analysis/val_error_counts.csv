@@ -1,0 +1,6 @@
+error,errors,out_of,share
+N classified as S,68,8788,0.0077
+S classified as N,40,206,0.1942
+V classified incorrectly,204,742,0.2749
+N classified as F,195,8788,0.0222
+"Correct on clean signal, wrong at em 0 dB",877,9110,0.0963

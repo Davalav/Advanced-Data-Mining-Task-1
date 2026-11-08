@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-import torch.ao.quantization as quantization
-import torch.nn as nn
 import wfdb
 from ecgdetectors import Detectors
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
@@ -23,7 +21,6 @@ SEEDS = [42, 1, 2]
 FILTERS = [16, 32, 64]
 NOISE_TYPES = ["bw", "em", "ma"]
 SNR_DB = [12, 6, 0]
-PEAK_TOLERANCE = 0.15   # sekunder, en detekterad topp så nära slaget räknas som slaget självt
 window_size = 100
 offset = 0
 
@@ -38,81 +35,7 @@ SUMMARY_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.csv")
 MARKDOWN_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.md")
 PLOT_FILE = os.path.join(HERE, "results", f"noise_results_{split}.png")
 
-torch.backends.quantized.engine = "onednn"
-half_window = window_size // 2
-
-
-def kept_beats(annotation, signal_length):
-    # Samma slag som MITBIHDataset använder
-    starts = annotation.sample - half_window + offset
-    ends = annotation.sample + half_window + offset
-    keep = np.isin(annotation.symbol, list(lib.AAMI_MAPPING)) & (starts >= 0) & (ends < signal_length)
-    labels = [lib.AAMI_MAPPING[symbol] for symbol in np.array(annotation.symbol)[keep]]
-    return annotation.sample[keep], np.array(labels)
-
-
-def annotated_peaks(annotation):
-    return annotation.sample[np.isin(annotation.symbol, lib.RR_BEAT_SYMBOLS)]
-
-
-def rr_intervals(beat_samples, peaks, fs):
-    # Tid mellan slagets egen topp och närmaste topp före och efter, i sekunder
-    tolerance = PEAK_TOLERANCE * fs
-    peaks = np.sort(np.asarray(peaks, dtype=float))
-    padded = np.concatenate([[np.nan], peaks, [np.nan]])
-
-    # Slagets egen topp är närmaste topp inom toleransen, annars används annoteringen.
-    # Detektorn markerar toppen lite senare än annoteringen, så RR mäts mellan toppar
-    i = np.searchsorted(peaks, beat_samples)
-    distance_left = np.nan_to_num(beat_samples - padded[i], nan=np.inf)
-    distance_right = np.nan_to_num(padded[i + 1] - beat_samples, nan=np.inf)
-    nearest = np.where(distance_left <= distance_right, padded[i], padded[i + 1])
-    own = np.where(np.minimum(distance_left, distance_right) <= tolerance, nearest, beat_samples)
-
-    before = np.searchsorted(peaks, own - tolerance, side="left")
-    after = np.searchsorted(peaks, own + tolerance, side="right") + 1
-    pre_rr = (own - padded[before]) / fs
-    post_rr = (padded[after] - own) / fs
-
-    # Saknas en granne används den andra, som i lib.py
-    pre_rr = np.where(np.isnan(pre_rr), post_rr, pre_rr)
-    post_rr = np.where(np.isnan(post_rr), pre_rr, post_rr)
-    return np.stack([pre_rr, post_rr], axis=1)
-
-
-def found_by_detector(beat_samples, peaks, fs):
-    tolerance = PEAK_TOLERANCE * fs
-    peaks = np.sort(np.asarray(peaks, dtype=float))
-    return (np.searchsorted(peaks, beat_samples + tolerance, side="right")
-            - np.searchsorted(peaks, beat_samples - tolerance, side="left")) > 0
-
-
-def add_noise(signal, noise, snr_db):
-    # Skalar bruset så att signal/brus-förhållandet blir snr_db
-    noise = noise[:len(signal)]
-    scale = np.sqrt(np.var(signal) / (np.var(noise) * 10 ** (snr_db / 10)))
-    return signal + scale * noise
-
-
-def beat_windows(signal, beat_samples, fs):
-    # Samma filter och z-normalisering per fönster som MITBIHDataset
-    filtered = lib.butter_bandpass_filter(signal, lib.lpf_cutoff, lib.hpf_cutoff, fs)
-    filtered = lib.notch_filter(filtered, 50, fs)
-    windows = np.stack([filtered[s - half_window + offset:s + half_window + offset] for s in beat_samples])
-    std = windows.std(axis=1, keepdims=True)
-    windows = (windows - windows.mean(axis=1, keepdims=True)) / np.where(std > 0, std, 1)
-    return windows.astype(np.float32)
-
-
-# RR normaliseras med träningsdatans medelvärde och standardavvikelse, som i cachen
-train_rr = []
-for record_name in lib.train_records:
-    annotation = wfdb.rdann(lib.directory + record_name, 'atr')
-    header = wfdb.rdheader(lib.directory + record_name)
-    beat_samples, _ = kept_beats(annotation, header.sig_len)
-    train_rr.append(rr_intervals(beat_samples, annotated_peaks(annotation), header.fs))
-train_rr = np.concatenate(train_rr)
-rr_mean, rr_std = train_rr.mean(axis=0), train_rr.std(axis=0)
+rr_mean, rr_std = lib.train_rr_stats(window_size, offset)
 
 clean_records = {}
 for record_name in records:
@@ -127,54 +50,24 @@ def build_inputs(noise_type, snr_db, rr_source):
     X, y, found = [], [], []
     for signal, annotation, fs in clean_records.values():
         if noise_type != "clean":
-            signal = add_noise(signal, noise_signals[noise_type], snr_db)
-        beat_samples, labels = kept_beats(annotation, len(signal))
+            signal = lib.add_noise(signal, noise_signals[noise_type], snr_db)
+        beat_samples, labels = lib.kept_beats(annotation, len(signal), window_size, offset)
 
         if rr_source == "detector":
             peaks = Detectors(fs).pan_tompkins_detector(signal)
         else:
-            peaks = annotated_peaks(annotation)
-        found.append(found_by_detector(beat_samples, peaks, fs))
+            peaks = lib.annotated_peaks(annotation)
+        found.append(lib.found_by_detector(beat_samples, peaks, fs))
 
-        rr = (rr_intervals(beat_samples, peaks, fs) - rr_mean) / rr_std
+        rr = (lib.rr_intervals(beat_samples, peaks, fs) - rr_mean) / rr_std
         rr = np.nan_to_num(rr)   # inga toppar alls: medelvärdet används
         rr_channels = np.repeat(rr[:, :, None], window_size, axis=2)
 
-        windows = beat_windows(signal, beat_samples, fs)
+        windows = lib.beat_windows(lib.filter_signal(signal, fs), beat_samples, window_size, offset)
         X.append(np.concatenate([windows[:, None, :], rr_channels], axis=1))
         y.append(labels)
 
     return torch.tensor(np.concatenate(X), dtype=torch.float32), np.concatenate(y), np.concatenate(found).mean()
-
-
-def build_model():
-    layers = []
-    in_channels = 3
-    length = window_size
-    for out_channels in FILTERS:
-        layers += [nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2), nn.ReLU(), nn.MaxPool1d(2)]
-        in_channels = out_channels
-        length //= 2
-    return nn.Sequential(*layers, nn.Flatten(), nn.Linear(in_channels * length, 4))
-
-
-def load_fp32(path):
-    model = build_model()
-    model.load_state_dict(torch.load(path, map_location="cpu"))
-    return model.eval()
-
-
-def load_int8(path):
-    # Samma steg som i quantize.py, men skalorna läses från filen i stället för att kalibreras
-    conv_relu_pairs = [[str(i), str(i + 1)] for i in range(0, 3 * len(FILTERS), 3)]
-    model = quantization.QuantWrapper(quantization.fuse_modules(build_model(), conv_relu_pairs)).eval()
-    model.qconfig = quantization.get_default_qconfig("onednn")
-    quantization.prepare(model, inplace=True)
-    with torch.no_grad():
-        model(torch.zeros(1, 3, window_size))
-    model = quantization.convert(model)
-    model.load_state_dict(torch.load(path, map_location="cpu", weights_only=False))
-    return model
 
 
 def predict(model, X):
@@ -200,7 +93,8 @@ models = []
 for seed in SEEDS:
     fp32_file, = glob.glob(os.path.join(MODELS_DIR, f"SmallCNN-valF1-*-seed{seed}-lr0.02-cw0-sampler1-rr1-filters{filters_name}.pth"))
     int8_file, = glob.glob(os.path.join(MODELS_DIR, f"SmallCNN-INT8-valF1-*-seed{seed}-filters{filters_name}.pth"))
-    models += [("FP32", seed, load_fp32(fp32_file)), ("INT8", seed, load_int8(int8_file))]
+    models += [("FP32", seed, lib.load_cnn_fp32(fp32_file, FILTERS, window_size)),
+               ("INT8", seed, lib.load_cnn_int8(int8_file, FILTERS, window_size))]
 
 # Ren signal med annoteringarnas RR är samma som de tidigare resultaten,
 # alla andra rader räknar RR från detektorn som på en riktig enhet
