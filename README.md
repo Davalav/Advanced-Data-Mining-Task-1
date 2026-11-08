@@ -16,9 +16,9 @@ The final model is a CNN with three Conv1d layers (16, 32 and 64 filters) and RR
 - The CNN matches the baseline in macro F1 on new patients, with lower accuracy but higher recall for S and F, and it is small enough for the MAX78002.
 - Results vary a lot between patients: accuracy per record ranges from 22 % to 100 % (median 92 %). Record 232 alone holds 1,382 of the 1,837 S beats, and almost all of them are classified as N.
 
-Full results: `results/metrics_test.csv`, `results/per_record_test.csv` and the confusion matrices below.
+Full results: `results/metrics.csv`, `results/per_record.csv` and the confusion matrices below (`results/confusion_matrix.png` and `.csv`).
 
-![Confusion matrices on DS2](results/confusion_matrix_test.png)
+![Confusion matrices on DS2](results/confusion_matrix.png)
 
 ### Noise robustness
 
@@ -31,9 +31,9 @@ Noise from the MIT-BIH Noise Stress Test Database added to the test records at 1
 | Muscle artifact (ma), 0 dB | 44.2 % | 81.7 % |
 | Baseline wander (bw), all levels | 49.5–50.1 % | 84.1–84.6 % |
 
-Full table: `results/noise_summary_test.md`.
+Full table: `results/noise_summary.md`, all metrics per seed: `results/noise_results.csv`.
 
-![Noise robustness on DS2](results/noise_results_test.png)
+![Noise robustness on DS2](results/noise_results.png)
 
 ### MAX78002 deployment
 
@@ -53,6 +53,7 @@ The model retrained with ai8x-training reaches a lower validation macro F1 (38.5
 ## Repository structure
 
 ```
+report.pdf                   the project report
 README.md
 requirements.txt
 configs/final_model.json     settings of the chosen model, read by the scripts in src/
@@ -72,10 +73,24 @@ src/
     error_analysis.py        representative errors with ECG waveforms
     deployment.py            layer table, memory check and INT8 export for MAX78002
 models/                      trained models (FP32 and INT8), named by validation F1 and settings
-results/                     all metrics, tables and figures
-max78002/                    MAX78002 configuration, quantization output, ai8x files and synthesis output
-old/                         earlier code and results, kept for reference
+results/
+    metrics.csv              final metrics on DS2 per model and seed
+    confusion_matrix.png/.csv confusion matrices on DS2
+    noise_results.png/.csv   noise robustness on DS2 (summary in noise_summary.md)
+    per_record.csv           results per test record (patient)
+    error_analysis/          error examples with ECG waveforms
+    *_val.*                  the same results on the validation records
+    experiments.csv, seed_comparison.csv, baseline_metrics.csv, quantization_metrics.csv
+max78002/
+    model_configuration.md   layer table, input/output, memory and software verification
+    deployment_evidence.md   PASS/FAIL table for the MAX78002 toolchain
+    quantization_output/     INT8 weights (PyTorch, readable JSON) and the ai8x quantized checkpoint
+    synthesis_output/        logs and the generated C project from ai8x-synthesis
+    ai8x_training/           model, dataset and scripts for ai8x-training and ai8x-synthesis
+old/                         earlier code and results (GitHub repository only)
 ```
+
+The submission package contains the same structure, with only the final models in `models/` (the three CNN seeds in FP32 and INT8) and without `old/`.
 
 ## Setup
 
@@ -129,6 +144,6 @@ python src/deployment.py         layer table, memory and INT8 export in max78002
 
 `train.py` also takes the settings as arguments, for example `python src/train.py 42 0.02 0 1 1 16,32,64` (seed, learning rate, class weights, sampler, RR input, filters). Each run is added to `results/experiments.csv`, and `results/seed_comparison.csv` shows the mean and standard deviation over seeds for each setting.
 
-`baseline.py`, `evaluate.py`, `noise_test.py` and `error_analysis.py` have a `RUN_TEST` flag. It is `True` since the final evaluation has been done; with `False` they run on the validation records instead.
+`baseline.py`, `evaluate.py`, `noise_test.py` and `error_analysis.py` have a `RUN_TEST` flag. It is `True` since the final evaluation has been done; with `False` they run on the validation records instead and write their files with the suffix `_val`.
 
 The MAX78002 toolchain (ai8x-training and ai8x-synthesis) runs in Linux or WSL; see `max78002/ai8x_training/README.md`.

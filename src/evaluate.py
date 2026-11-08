@@ -32,10 +32,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(ROOT, "models")
 split = "test" if RUN_TEST else "val"
 records = dataset.test_records if RUN_TEST else dataset.val_records
-METRICS_FILE = os.path.join(ROOT, "results", f"metrics_{split}.csv")
-CONFUSION_FILE = os.path.join(ROOT, "results", f"confusion_matrix_{split}.csv")
-CONFUSION_PLOT = os.path.join(ROOT, "results", f"confusion_matrix_{split}.png")
-RECORD_FILE = os.path.join(ROOT, "results", f"per_record_{split}.csv")
+suffix = "" if RUN_TEST else "_val"   # slutresultaten på DS2 får de namn som slutpaketet kräver
+METRICS_FILE = os.path.join(ROOT, "results", f"metrics{suffix}.csv")
+CONFUSION_FILE = os.path.join(ROOT, "results", f"confusion_matrix{suffix}.csv")
+CONFUSION_PLOT = os.path.join(ROOT, "results", f"confusion_matrix{suffix}.png")
+RECORD_FILE = os.path.join(ROOT, "results", f"per_record{suffix}.csv")
 CLASSES = ["N", "S", "V", "F"]
 
 # ---- Indata till CNN:en: fönster och RR från annoteringarna, som i quantize.py ----

@@ -32,10 +32,11 @@ NOISE_DIR = dataset.noise_directory
 
 split = "test" if RUN_TEST else "val"
 records = dataset.test_records if RUN_TEST else dataset.val_records
-RESULTS_FILE = os.path.join(ROOT, "results", f"noise_results_{split}.csv")
-SUMMARY_FILE = os.path.join(ROOT, "results", f"noise_summary_{split}.csv")
-MARKDOWN_FILE = os.path.join(ROOT, "results", f"noise_summary_{split}.md")
-PLOT_FILE = os.path.join(ROOT, "results", f"noise_results_{split}.png")
+suffix = "" if RUN_TEST else "_val"   # slutresultaten på DS2 får de namn som slutpaketet kräver
+RESULTS_FILE = os.path.join(ROOT, "results", f"noise_results{suffix}.csv")
+SUMMARY_FILE = os.path.join(ROOT, "results", f"noise_summary{suffix}.csv")
+MARKDOWN_FILE = os.path.join(ROOT, "results", f"noise_summary{suffix}.md")
+PLOT_FILE = os.path.join(ROOT, "results", f"noise_results{suffix}.png")
 
 rr_mean, rr_std = dataset.train_rr_stats(window_size, offset)
 
