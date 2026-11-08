@@ -1259,3 +1259,119 @@ val_records = ['112', '201', '205', '223']
 # NEW best 90% split
 #train_records = ['101', '106', '108', '109', '112', '114', '115', '118', '119', '122', '124', '201', '203', '205', '208', '209', '215', '220', '223', '230']
 #val_records = ['116', '207']
+
+# ------------------------------------------------------------------
+# CNN + RR: fönster, RR, brus och modeller för noise_test.py och error_analysis.py
+# ------------------------------------------------------------------
+PEAK_TOLERANCE = 0.15   # sekunder, en detekterad topp så nära slaget räknas som slaget självt
+
+
+def kept_beats(annotation, signal_length, window_size, offset=0):
+    # Samma slag som MITBIHDataset använder
+    half_window = window_size // 2
+    starts = annotation.sample - half_window + offset
+    ends = annotation.sample + half_window + offset
+    keep = np.isin(annotation.symbol, list(AAMI_MAPPING)) & (starts >= 0) & (ends < signal_length)
+    labels = [AAMI_MAPPING[symbol] for symbol in np.array(annotation.symbol)[keep]]
+    return annotation.sample[keep], np.array(labels)
+
+
+def annotated_peaks(annotation):
+    return annotation.sample[np.isin(annotation.symbol, RR_BEAT_SYMBOLS)]
+
+
+def rr_intervals(beat_samples, peaks, fs):
+    # Tid mellan slagets egen topp och närmaste topp före och efter, i sekunder
+    tolerance = PEAK_TOLERANCE * fs
+    peaks = np.sort(np.asarray(peaks, dtype=float))
+    padded = np.concatenate([[np.nan], peaks, [np.nan]])
+
+    # Slagets egen topp är närmaste topp inom toleransen, annars används annoteringen.
+    # Detektorn markerar toppen lite senare än annoteringen, så RR mäts mellan toppar
+    i = np.searchsorted(peaks, beat_samples)
+    distance_left = np.nan_to_num(beat_samples - padded[i], nan=np.inf)
+    distance_right = np.nan_to_num(padded[i + 1] - beat_samples, nan=np.inf)
+    nearest = np.where(distance_left <= distance_right, padded[i], padded[i + 1])
+    own = np.where(np.minimum(distance_left, distance_right) <= tolerance, nearest, beat_samples)
+
+    before = np.searchsorted(peaks, own - tolerance, side="left")
+    after = np.searchsorted(peaks, own + tolerance, side="right") + 1
+    pre_rr = (own - padded[before]) / fs
+    post_rr = (padded[after] - own) / fs
+
+    # Saknas en granne används den andra, som i MITBIHFeatureDataset
+    pre_rr = np.where(np.isnan(pre_rr), post_rr, pre_rr)
+    post_rr = np.where(np.isnan(post_rr), pre_rr, post_rr)
+    return np.stack([pre_rr, post_rr], axis=1)
+
+
+def found_by_detector(beat_samples, peaks, fs):
+    tolerance = PEAK_TOLERANCE * fs
+    peaks = np.sort(np.asarray(peaks, dtype=float))
+    return (np.searchsorted(peaks, beat_samples + tolerance, side="right")
+            - np.searchsorted(peaks, beat_samples - tolerance, side="left")) > 0
+
+
+def add_noise(signal, noise, snr_db):
+    # Skalar bruset så att signal/brus-förhållandet blir snr_db
+    noise = noise[:len(signal)]
+    scale = np.sqrt(np.var(signal) / (np.var(noise) * 10 ** (snr_db / 10)))
+    return signal + scale * noise
+
+
+def filter_signal(signal, fs):
+    # Samma filter som MITBIHDataset
+    filtered = butter_bandpass_filter(signal, lpf_cutoff, hpf_cutoff, fs)
+    return notch_filter(filtered, 50, fs)
+
+
+def beat_windows(filtered, beat_samples, window_size, offset=0):
+    # Samma z-normalisering per fönster som MITBIHDataset
+    half_window = window_size // 2
+    windows = np.stack([filtered[s - half_window + offset:s + half_window + offset] for s in beat_samples])
+    std = windows.std(axis=1, keepdims=True)
+    windows = (windows - windows.mean(axis=1, keepdims=True)) / np.where(std > 0, std, 1)
+    return windows.astype(np.float32)
+
+
+def train_rr_stats(window_size, offset=0):
+    # RR normaliseras med träningsdatans medelvärde och standardavvikelse, som i feature-cachen
+    train_rr = []
+    for record_name in train_records:
+        annotation = wfdb.rdann(directory + record_name, 'atr')
+        header = wfdb.rdheader(directory + record_name)
+        beat_samples, _ = kept_beats(annotation, header.sig_len, window_size, offset)
+        train_rr.append(rr_intervals(beat_samples, annotated_peaks(annotation), header.fs))
+    train_rr = np.concatenate(train_rr)
+    return train_rr.mean(axis=0), train_rr.std(axis=0)
+
+
+def build_cnn(filters, in_channels=3, window_size=100):
+    layers = []
+    length = window_size
+    for out_channels in filters:
+        layers += [nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2), nn.ReLU(), nn.MaxPool1d(2)]
+        in_channels = out_channels
+        length //= 2
+    return nn.Sequential(*layers, nn.Flatten(), nn.Linear(in_channels * length, 4))
+
+
+def load_cnn_fp32(path, filters, window_size=100):
+    model = build_cnn(filters, window_size=window_size)
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    return model.eval()
+
+
+def load_cnn_int8(path, filters, window_size=100):
+    # Samma steg som i quantize.py, men skalorna läses från filen i stället för att kalibreras
+    import torch.ao.quantization as quantization
+    torch.backends.quantized.engine = "onednn"
+    conv_relu_pairs = [[str(i), str(i + 1)] for i in range(0, 3 * len(filters), 3)]
+    model = quantization.QuantWrapper(quantization.fuse_modules(build_cnn(filters, window_size=window_size), conv_relu_pairs)).eval()
+    model.qconfig = quantization.get_default_qconfig("onednn")
+    quantization.prepare(model, inplace=True)
+    with torch.no_grad():
+        model(torch.zeros(1, 3, window_size))
+    model = quantization.convert(model)
+    model.load_state_dict(torch.load(path, map_location="cpu", weights_only=False))
+    return model

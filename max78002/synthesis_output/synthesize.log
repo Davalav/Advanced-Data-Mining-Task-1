@@ -1,0 +1,21 @@
+WARNING: Cannot run "yamllint" linter to check /mnt/c/Users/david/ADM/Advanced-Data-Mining-Task-1/max78002/ai8x_training/ecg_rr.yaml
+NOTICE: Defaulting to "no activation" for mlp in layer sequence 4 in YAML configuration.
+NOTICE: --overwrite specified, writing to synthed_net/ecg_rr even though it exists.
+Arranging weights... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+Storing weights...   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+Creating network...  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+Configuring device: MAX78002
+Reading /mnt/c/Users/david/ADM/Advanced-Data-Mining-Task-1/max78002/ai8x_training/ecg_rr.yaml to configure network...
+WARNING: Cannot run "yamllint" linter to check /mnt/c/Users/david/ADM/Advanced-Data-Mining-Task-1/max78002/ai8x_training/ecg_rr.yaml
+NOTICE: Defaulting to "no activation" for mlp in layer sequence 4 in YAML configuration.
+Reading /home/david/ai8x/ai8x-synthesis/trained/ai87-ecg-rr-qat8-q.pth.tar to configure network weights...
+Checkpoint for epoch 54, model ai87ecgnet - weight and bias data:
+ InCh OutCh  Weights         Quant Shift  Min  Max    Size Key                                       Bias       Quant  Min  Max Size Key
+    3    16  (48, 5)             8    -1  -89   59     240 conv1.op.weight                           (16,)          8  -36   51   16 conv1.op.bias            
+   16    32  (512, 5)            8    -1  -94   72    2560 conv2.op.weight                           (32,)          8  -13   17   32 conv2.op.bias            
+   32    64  (2048, 5)           8    -1  -88   43   10240 conv3.op.weight                           (64,)          8   -2    4   64 conv3.op.bias            
+  768     4  (1, 4, 768)         8 N/A   -109   83    3072 fc.op.weight                              (4,)           8    0    1    4 fc.op.bias               
+TOTAL: 4 parameter layers, 16,228 parameters, 16,228 bytes
+Configuring data set: ECG_RR.
+ecg_rr...
+NOTICE: --overwrite specified, writing to synthed_net/ecg_rr even though it exists.
