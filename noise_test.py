@@ -4,6 +4,7 @@
 import glob
 import os
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
@@ -33,6 +34,9 @@ NOISE_DIR = os.path.join(HERE, "..", "mit-bih-noise-stress-test-database-1.0.0")
 split = "test" if RUN_TEST else "val"
 records = lib.test_records if RUN_TEST else lib.val_records
 RESULTS_FILE = os.path.join(HERE, "results", f"noise_results_{split}.csv")
+SUMMARY_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.csv")
+MARKDOWN_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.md")
+PLOT_FILE = os.path.join(HERE, "results", f"noise_results_{split}.png")
 
 torch.backends.quantized.engine = "onednn"
 half_window = window_size // 2
@@ -215,16 +219,88 @@ for noise_type, snr_db, rr_source in conditions:
     print(f"{noise_type:5s} {snr_text:>2s} dB  RR från {rr_source:11s}  hittade slag {beats_found * 100:6.2f} %"
           f"  F1 FP32 {f1_mean['FP32'] * 100:5.2f} %  INT8 {f1_mean['INT8'] * 100:5.2f} %", flush=True)
 
-results = pd.DataFrame(results)
+per_seed = pd.DataFrame(results)
 
 # Medelvärde över seeds läggs sist i samma CSV
 group = ["noise", "snr_db", "rr_source", "format"]
-grouped = results.drop(columns=["seed", "split"]).groupby(group, sort=False, dropna=False)
+grouped = per_seed.drop(columns=["seed", "split"]).groupby(group, sort=False, dropna=False)
 means = grouped.mean().reset_index()
 means["f1_std"] = grouped["f1_macro"].std().values
 means["seed"] = "mean"
 means["split"] = split
 
-results = pd.concat([results, means], ignore_index=True).round(4)
-results.to_csv(RESULTS_FILE, index=False)
+pd.concat([per_seed, means], ignore_index=True).round(4).to_csv(RESULTS_FILE, index=False)
 print(f"\nSparade resultat till {RESULTS_FILE}")
+
+
+# ---- Kort sammanfattning för README och rapport ----
+def condition_name(noise_type, snr_db, rr_source):
+    if noise_type == "clean":
+        return "Clean, annotation RR" if rr_source == "annotations" else "Clean"
+    return f"{noise_type} {int(snr_db)} dB"
+
+
+summary = []
+for (noise_type, snr_db, rr_source), rows in per_seed.groupby(["noise", "snr_db", "rr_source"], sort=False, dropna=False):
+    row = {"condition": condition_name(noise_type, snr_db, rr_source), "beats_found": rows["beats_found"].iloc[0] * 100}
+    for name, f1 in rows.groupby("format", sort=False)["f1_macro"]:
+        row[f"{name}_f1_mean"] = f1.mean() * 100
+        row[f"{name}_f1_std"] = f1.std() * 100
+        row[f"{name}_f1_best"] = f1.max() * 100
+    summary.append(row)
+summary = pd.DataFrame(summary).round(2)
+summary.to_csv(SUMMARY_FILE, index=False)
+
+lines = [f"F1 macro (%) on {split} data, mean ± std and best of seeds {', '.join(map(str, SEEDS))}. "
+         "RR is computed with a Pan-Tompkins detector except in the first row.",
+         "",
+         "| Condition | FP32 mean ± std | FP32 best | INT8 mean ± std | INT8 best | Beats found by detector |",
+         "|---|---|---|---|---|---|"]
+for row in summary.itertuples():
+    lines.append(f"| {row.condition} | {row.FP32_f1_mean:.2f} ± {row.FP32_f1_std:.2f} | {row.FP32_f1_best:.2f} "
+                 f"| {row.INT8_f1_mean:.2f} ± {row.INT8_f1_std:.2f} | {row.INT8_f1_best:.2f} | {row.beats_found:.2f} % |")
+with open(MARKDOWN_FILE, "w", encoding="utf-8") as f:
+    f.write("\n".join(lines) + "\n")
+
+# Graf: F1 mot brusnivå, en linje per brustyp
+COLORS = {"bw": "#2a78d6", "em": "#eb6834", "ma": "#1baf7a"}
+NOISE_NAMES = {"bw": "Baseline wander (bw)", "em": "Electrode motion (em)", "ma": "Muscle artifact (ma)"}
+x_labels = ["Clean"] + [f"{snr_db} dB" for snr_db in SNR_DB]
+x = np.arange(len(x_labels))
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True, facecolor="#fcfcfb")
+for ax, name in zip(axes, ["FP32", "INT8"]):
+    rows = per_seed[per_seed["format"] == name]
+    clean = rows[(rows["noise"] == "clean") & (rows["rr_source"] == "detector")]["f1_macro"] * 100
+    reference = rows[rows["rr_source"] == "annotations"]["f1_macro"].mean() * 100
+
+    ax.axhline(reference, color="#898781", linestyle="--", linewidth=1)
+    ax.text(x[-1] + 0.4, reference + 0.3, "Clean, annotation RR", ha="right", va="bottom", color="#52514e", fontsize=9)
+
+    for noise_type in NOISE_TYPES:
+        values = [clean] + [rows[(rows["noise"] == noise_type) & (rows["snr_db"] == snr_db)]["f1_macro"] * 100
+                            for snr_db in SNR_DB]
+        mean = np.array([v.mean() for v in values])
+        std = np.array([v.std() for v in values])
+        ax.fill_between(x, mean - std, mean + std, color=COLORS[noise_type], alpha=0.15, linewidth=0)
+        ax.plot(x, mean, color=COLORS[noise_type], linewidth=2, marker="o", markersize=6, label=NOISE_NAMES[noise_type])
+        ax.text(x[-1] + 0.1, mean[-1], noise_type, va="center", color="#0b0b0b", fontsize=9)
+
+    ax.set_title(name, loc="left", color="#0b0b0b")
+    ax.set_xticks(x, x_labels)
+    ax.set_xlim(-0.2, x[-1] + 0.4)
+    ax.set_facecolor("#fcfcfb")
+    ax.grid(axis="y", color="#e5e4e0", linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(colors="#52514e")
+    for side in ["top", "right"]:
+        ax.spines[side].set_visible(False)
+    for side in ["left", "bottom"]:
+        ax.spines[side].set_color("#898781")
+
+axes[0].set_ylabel("F1 macro (%)", color="#52514e")
+axes[1].legend(frameon=False, loc="lower left", fontsize=9)
+fig.suptitle(f"Noise robustness on {split} data (mean ± std over {len(SEEDS)} seeds)", x=0.01, ha="left", color="#0b0b0b")
+fig.tight_layout()
+fig.savefig(PLOT_FILE, dpi=150, facecolor="#fcfcfb")
+print(f"Sparade sammanfattning till {SUMMARY_FILE}, {MARKDOWN_FILE} och {PLOT_FILE}")
