@@ -12,35 +12,37 @@ import wfdb
 from ecgdetectors import Detectors
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 
-import lib
+import dataset
+import model as cnn
+from config import CONFIG
 
 # Sätt till True först när allt annat är låst, DS2 ska bara köras en gång
-RUN_TEST = False
+RUN_TEST = True
 
-SEEDS = [42, 1, 2]
-FILTERS = [16, 32, 64]
+SEEDS = CONFIG["seeds"]
+FILTERS = CONFIG["filters"]
 NOISE_TYPES = ["bw", "em", "ma"]
 SNR_DB = [12, 6, 0]
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(HERE, "models")
-NOISE_DIR = os.path.join(HERE, "..", "mit-bih-noise-stress-test-database-1.0.0") + os.sep
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODELS_DIR = os.path.join(ROOT, "models")
+NOISE_DIR = dataset.noise_directory
 
 split = "test" if RUN_TEST else "val"
-records = lib.test_records if RUN_TEST else lib.val_records
-RESULTS_FILE = os.path.join(HERE, "results", f"noise_results_{split}.csv")
-SUMMARY_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.csv")
-MARKDOWN_FILE = os.path.join(HERE, "results", f"noise_summary_{split}.md")
-PLOT_FILE = os.path.join(HERE, "results", f"noise_results_{split}.png")
+records = dataset.test_records if RUN_TEST else dataset.val_records
+RESULTS_FILE = os.path.join(ROOT, "results", f"noise_results_{split}.csv")
+SUMMARY_FILE = os.path.join(ROOT, "results", f"noise_summary_{split}.csv")
+MARKDOWN_FILE = os.path.join(ROOT, "results", f"noise_summary_{split}.md")
+PLOT_FILE = os.path.join(ROOT, "results", f"noise_results_{split}.png")
 
-rr_mean, rr_std = lib.train_rr_stats(window_size, offset)
+rr_mean, rr_std = dataset.train_rr_stats(window_size, offset)
 
 clean_records = {}
 for record_name in records:
-    record = wfdb.rdrecord(lib.directory + record_name)
-    annotation = wfdb.rdann(lib.directory + record_name, 'atr')
+    record = wfdb.rdrecord(dataset.directory + record_name)
+    annotation = wfdb.rdann(dataset.directory + record_name, 'atr')
     clean_records[record_name] = (record.p_signal[:, 0], annotation, record.fs)
 
 noise_signals = {name: wfdb.rdrecord(NOISE_DIR + name).p_signal[:, 0] for name in NOISE_TYPES}
@@ -50,20 +52,20 @@ def build_inputs(noise_type, snr_db, rr_source):
     X, y, found = [], [], []
     for signal, annotation, fs in clean_records.values():
         if noise_type != "clean":
-            signal = lib.add_noise(signal, noise_signals[noise_type], snr_db)
-        beat_samples, labels = lib.kept_beats(annotation, len(signal), window_size, offset)
+            signal = dataset.add_noise(signal, noise_signals[noise_type], snr_db)
+        beat_samples, labels = dataset.kept_beats(annotation, len(signal), window_size, offset)
 
         if rr_source == "detector":
             peaks = Detectors(fs).pan_tompkins_detector(signal)
         else:
-            peaks = lib.annotated_peaks(annotation)
-        found.append(lib.found_by_detector(beat_samples, peaks, fs))
+            peaks = dataset.annotated_peaks(annotation)
+        found.append(dataset.found_by_detector(beat_samples, peaks, fs))
 
-        rr = (lib.rr_intervals(beat_samples, peaks, fs) - rr_mean) / rr_std
+        rr = (dataset.rr_intervals(beat_samples, peaks, fs) - rr_mean) / rr_std
         rr = np.nan_to_num(rr)   # inga toppar alls: medelvärdet används
         rr_channels = np.repeat(rr[:, :, None], window_size, axis=2)
 
-        windows = lib.beat_windows(lib.filter_signal(signal, fs), beat_samples, window_size, offset)
+        windows = dataset.beat_windows(dataset.filter_signal(signal, fs), beat_samples, window_size, offset)
         X.append(np.concatenate([windows[:, None, :], rr_channels], axis=1))
         y.append(labels)
 
@@ -93,8 +95,8 @@ models = []
 for seed in SEEDS:
     fp32_file, = glob.glob(os.path.join(MODELS_DIR, f"SmallCNN-valF1-*-seed{seed}-lr0.02-cw0-sampler1-rr1-filters{filters_name}.pth"))
     int8_file, = glob.glob(os.path.join(MODELS_DIR, f"SmallCNN-INT8-valF1-*-seed{seed}-filters{filters_name}.pth"))
-    models += [("FP32", seed, lib.load_cnn_fp32(fp32_file, FILTERS, window_size)),
-               ("INT8", seed, lib.load_cnn_int8(int8_file, FILTERS, window_size))]
+    models += [("FP32", seed, cnn.load_cnn_fp32(fp32_file, FILTERS, window_size)),
+               ("INT8", seed, cnn.load_cnn_int8(int8_file, FILTERS, window_size))]
 
 # Ren signal med annoteringarnas RR är samma som de tidigare resultaten,
 # alla andra rader räknar RR från detektorn som på en riktig enhet

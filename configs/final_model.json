@@ -1,0 +1,18 @@
+{
+  "description": "Chosen edge model: CNN with RR input, selected on validation macro F1 (see results/seed_comparison.csv)",
+  "lead": "MLII (channel 0)",
+  "window_size": 100,
+  "offset": 0,
+  "rr_input": true,
+  "filters": [16, 32, 64],
+  "kernel_size": 5,
+  "lr": 0.02,
+  "momentum": 0.9,
+  "batch_size": 64,
+  "epochs": 100,
+  "class_weights": false,
+  "sampler": true,
+  "seeds": [42, 1, 2],
+  "deployed_seed": 42,
+  "calibration_beats": 5000
+}

@@ -1,0 +1,16 @@
+error,record,time_s,sample,true,predicted,confidence,pre_rr,post_rr
+N classified as S,213,1558.29,560986,N,S,0.722,0.556,0.583
+N classified as S,219,737.96,265665,N,S,0.944,0.561,0.867
+N classified as S,222,8.86,3191,N,S,0.871,0.7,0.914
+S classified as N,200,1603.41,577228,S,N,0.615,0.589,0.853
+S classified as N,222,570.46,205366,S,N,0.871,0.456,0.925
+S classified as N,222,1273.32,458396,S,N,0.806,0.375,0.561
+V classified incorrectly,228,23.84,8582,V,N,0.722,0.522,0.969
+V classified incorrectly,228,416.25,149849,V,N,1.0,0.611,1.1
+V classified incorrectly,228,1461.27,526058,V,N,0.979,0.581,1.192
+N classified as F,214,1741.48,626933,N,F,0.871,0.778,0.383
+N classified as F,221,718.74,258745,N,F,0.966,0.675,0.494
+N classified as F,233,272.84,98224,N,F,0.999,0.592,0.394
+"Correct on clean signal, wrong at em 0 dB",121,1291.73,465023,N,V,1.0,0.35,0.961
+"Correct on clean signal, wrong at em 0 dB",214,1763.45,634842,N,V,1.0,0.742,0.786
+"Correct on clean signal, wrong at em 0 dB",222,1606.89,578481,N,S,0.604,0.772,0.469

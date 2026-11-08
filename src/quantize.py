@@ -14,27 +14,29 @@ import torch.nn as nn
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
-import lib
+import dataset
+from config import CONFIG
+from prepare_data import CACHE_FILE
 
-SEEDS = [42, 1, 2]
-FILTERS = [16, 32, 64]
-CALIBRATION_BEATS = 5000
+SEEDS = CONFIG["seeds"]
+FILTERS = CONFIG["filters"]
+CALIBRATION_BEATS = CONFIG["calibration_beats"]
 LATENCY_BEATS = 1000
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(HERE, "models")
-RESULTS_FILE = os.path.join(HERE, "results", "quantization_metrics.csv")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODELS_DIR = os.path.join(ROOT, "models")
+RESULTS_FILE = os.path.join(ROOT, "results", "quantization_metrics.csv")
 
 torch.backends.quantized.engine = "onednn"
 torch.set_num_threads(1)
 
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
-val_dataset = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, offset=offset)
+train_dataset = dataset.MITBIHDataset(record_list=dataset.train_records, window_size=window_size, offset=offset)
+val_dataset = dataset.MITBIHDataset(record_list=dataset.val_records, window_size=window_size, offset=offset)
 y_val = val_dataset.labels
 
-cache = np.load(os.path.join(HERE, f"features_cache_w{window_size}_o{offset}.npz"))
+cache = np.load(CACHE_FILE)
 feature_names = list(cache["feature_names"])
 rr_idx = [feature_names.index("pre_rr"), feature_names.index("post_rr")]
 
@@ -96,7 +98,7 @@ def latency_ms(model):
 
 def evaluate(model, y_pred, fp32_pred, name, seed, bytes_per_weight, model_file):
     print(f"\n--- {name}, seed {seed} ---")
-    print(classification_report(y_val, y_pred, target_names=lib.CLASS_NAMES, digits=4, zero_division=0))
+    print(classification_report(y_val, y_pred, target_names=dataset.CLASS_NAMES, digits=4, zero_division=0))
     print(confusion_matrix(y_val, y_pred))
 
     n_parameters = sum(p.numel() for p in build_model().parameters())
@@ -107,7 +109,7 @@ def evaluate(model, y_pred, fp32_pred, name, seed, bytes_per_weight, model_file)
         "n_parameters": n_parameters,
         "weights_kb": n_parameters * bytes_per_weight / 1000,
         "file_kb": os.path.getsize(model_file) / 1000,
-        "latency_ms": latency_ms(model),
+        "pc_latency_ms": latency_ms(model),   # mätt på datorns processor, inte på MAX78002
         "same_as_fp32": (y_pred == fp32_pred).mean(),
         "accuracy": accuracy_score(y_val, y_pred),
         "f1_macro": f1_score(y_val, y_pred, average='macro'),
@@ -151,4 +153,4 @@ means["f1_std"] = results.groupby("format", sort=False)["f1_macro"].std().values
 results = pd.concat([results, means], ignore_index=True).round(4)
 results.to_csv(RESULTS_FILE, index=False)
 print(f"\nSparade resultat till {RESULTS_FILE}")
-print(means[["format", "f1_macro", "f1_std", "accuracy", "weights_kb", "file_kb", "latency_ms", "same_as_fp32"]].round(4))
+print(means[["format", "f1_macro", "f1_std", "accuracy", "weights_kb", "file_kb", "pc_latency_ms", "same_as_fp32"]].round(4))

@@ -1,3 +1,6 @@
+# ------------------ Training of the CNN -----------------
+# python src/train.py SEED LR CLASS_WEIGHTS SAMPLER RR FILTERS, e.g. python src/train.py 42 0.02 0 1 1 16,32,64
+# Arguments that are left out are taken from configs/final_model.json
 import copy
 import sys
 import time
@@ -11,26 +14,29 @@ from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
-import lib
+import dataset
+import model as cnn
+from config import CONFIG
+from prepare_data import CACHE_FILE
 from experiment_log import save_experiment
 
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
-LR = float(sys.argv[2]) if len(sys.argv) > 2 else 0.02
-USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else True
-USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
-USE_RR = sys.argv[5] == "1" if len(sys.argv) > 5 else False
-FILTERS = [int(f) for f in sys.argv[6].split(",")] if len(sys.argv) > 6 else [8, 16]
+LR = float(sys.argv[2]) if len(sys.argv) > 2 else CONFIG["lr"]
+USE_CLASS_WEIGHTS = sys.argv[3] == "1" if len(sys.argv) > 3 else CONFIG["class_weights"]
+USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else CONFIG["sampler"]
+USE_RR = sys.argv[5] == "1" if len(sys.argv) > 5 else CONFIG["rr_input"]
+FILTERS = [int(f) for f in sys.argv[6].split(",")] if len(sys.argv) > 6 else CONFIG["filters"]
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(HERE, "models")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODELS_DIR = os.path.join(ROOT, "models")
 
-train_dataset = lib.MITBIHDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
-val_dataset = lib.MITBIHDataset(record_list=lib.val_records, window_size=window_size, offset=offset)
+train_dataset = dataset.MITBIHDataset(record_list=dataset.train_records, window_size=window_size, offset=offset)
+val_dataset = dataset.MITBIHDataset(record_list=dataset.val_records, window_size=window_size, offset=offset)
 
 X_train = torch.tensor(train_dataset.beats).unsqueeze(1)
 y_train = torch.tensor(train_dataset.labels)
@@ -38,7 +44,7 @@ X_val = torch.tensor(val_dataset.beats).unsqueeze(1)
 y_val = val_dataset.labels
 
 if USE_RR:
-    cache = np.load(os.path.join(HERE, "features_cache_w100_o0.npz"))
+    cache = np.load(CACHE_FILE)
     feature_names = list(cache["feature_names"])
     rr_idx = [feature_names.index("pre_rr"), feature_names.index("post_rr")]
 
@@ -56,27 +62,19 @@ if USE_SAMPLER:
     sample_weights = 1.0 / np.sqrt(class_counts[train_dataset.labels])
     sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True,
                                     generator=torch.Generator().manual_seed(SEED))
-    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, sampler=sampler)
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=CONFIG["batch_size"], sampler=sampler)
 else:
-    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=64, shuffle=True)
+    train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=CONFIG["batch_size"], shuffle=True)
 
-layers = []
-in_channels = X_train.shape[1]
-length = X_train.shape[2]
-for out_channels in FILTERS:
-    layers += [nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2), nn.ReLU(), nn.MaxPool1d(2)]
-    in_channels = out_channels
-    length //= 2
+model = cnn.build_cnn(FILTERS, in_channels=X_train.shape[1], window_size=window_size)
 
-model = nn.Sequential(*layers, nn.Flatten(), nn.Linear(in_channels * length, 4))
-
-# Samma klassviktning som i MultilayerPerceptron.py
+# Samma klassviktning som i train_mlp.py
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
 criterion = nn.CrossEntropyLoss(weight=class_weights if USE_CLASS_WEIGHTS else None)
-optimizer = optim.SGD(model.parameters(), lr=LR, momentum=0.9)
-epochs = 100
+optimizer = optim.SGD(model.parameters(), lr=LR, momentum=CONFIG["momentum"])
+epochs = CONFIG["epochs"]
 
 start_time = time.time()
 best_f1 = -1
@@ -112,7 +110,7 @@ model.eval()
 with torch.no_grad():
     y_pred = model(X_val).argmax(dim=1).numpy()
 
-print(classification_report(y_val, y_pred, target_names=lib.CLASS_NAMES, digits=4, zero_division=0))
+print(classification_report(y_val, y_pred, target_names=dataset.CLASS_NAMES, digits=4, zero_division=0))
 print(confusion_matrix(y_val, y_pred))
 
 result = {

@@ -1,4 +1,4 @@
-format,seed,split,n_parameters,weights_kb,file_kb,latency_ms,same_as_fp32,accuracy,f1_macro,precision_N,recall_N,f1_N,precision_S,recall_S,f1_S,precision_V,recall_V,f1_V,precision_F,recall_F,f1_F,f1_std
+format,seed,split,n_parameters,weights_kb,file_kb,pc_latency_ms,same_as_fp32,accuracy,f1_macro,precision_N,recall_N,f1_N,precision_S,recall_S,f1_S,precision_V,recall_V,f1_V,precision_F,recall_F,f1_F,f1_std
 FP32,42,val,16228.0,64.912,69.795,0.1573,1.0,0.9323,0.524,0.9741,0.9668,0.9704,0.3846,0.3155,0.3467,0.8362,0.7291,0.779,0.0,0.0,0.0,
 INT8,42,val,16228.0,16.228,28.565,0.4241,0.9946,0.9331,0.5274,0.9732,0.9678,0.9705,0.3988,0.3252,0.3583,0.8459,0.7251,0.7808,0.0,0.0,0.0,
 FP32,1,val,16228.0,64.912,69.781,0.1246,1.0,0.9263,0.519,0.9757,0.9606,0.9681,0.3234,0.3155,0.3194,0.8546,0.721,0.7822,0.0035,0.037,0.0064,

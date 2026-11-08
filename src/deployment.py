@@ -11,25 +11,27 @@ import torch
 import wfdb
 from sklearn.metrics import f1_score
 
-import lib
+import dataset
+import model as cnn
+from config import CONFIG
 
-SEED = 42
-FILTERS = [16, 32, 64]
+SEED = CONFIG["deployed_seed"]
+FILTERS = CONFIG["filters"]
 WEIGHT_LIMIT_BYTES = 2_000_000    # MAX78002-gränser från Task 1
 MEMORY_LIMIT_BYTES = 1_300_000
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.join(HERE, "max78002")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT_DIR = os.path.join(ROOT, "max78002")
 QUANTIZATION_DIR = os.path.join(OUT_DIR, "quantization_output")
 os.makedirs(QUANTIZATION_DIR, exist_ok=True)
 
 filters_name = "-".join(map(str, FILTERS))
-fp32_file, = glob.glob(os.path.join(HERE, "models", f"SmallCNN-valF1-*-seed{SEED}-lr0.02-cw0-sampler1-rr1-filters{filters_name}.pth"))
-int8_file, = glob.glob(os.path.join(HERE, "models", f"SmallCNN-INT8-valF1-*-seed{SEED}-filters{filters_name}.pth"))
-fp32_model = lib.load_cnn_fp32(fp32_file, FILTERS, window_size)
-int8_model = lib.load_cnn_int8(int8_file, FILTERS, window_size)
+fp32_file, = glob.glob(os.path.join(ROOT, "models", f"SmallCNN-valF1-*-seed{SEED}-lr0.02-cw0-sampler1-rr1-filters{filters_name}.pth"))
+int8_file, = glob.glob(os.path.join(ROOT, "models", f"SmallCNN-INT8-valF1-*-seed{SEED}-filters{filters_name}.pth"))
+fp32_model = cnn.load_cnn_fp32(fp32_file, FILTERS, window_size)
+int8_model = cnn.load_cnn_int8(int8_file, FILTERS, window_size)
 
 # ---- 1. Lagertabell: typ, in- och utdimensioner och parametrar per lager ----
 layers = []
@@ -104,15 +106,15 @@ with open(JSON_FILE, "w", encoding="utf-8") as f:
     json.dump(export, f, indent=2)
 
 # ---- 4. Testkörning i Python på valideringsdatan, med annoteringarnas RR som i quantize.py ----
-rr_mean, rr_std = lib.train_rr_stats(window_size, offset)
+rr_mean, rr_std = dataset.train_rr_stats(window_size, offset)
 X, y = [], []
-for record_name in lib.val_records:
-    record = wfdb.rdrecord(lib.directory + record_name)
-    annotation = wfdb.rdann(lib.directory + record_name, 'atr')
+for record_name in dataset.val_records:
+    record = wfdb.rdrecord(dataset.directory + record_name)
+    annotation = wfdb.rdann(dataset.directory + record_name, 'atr')
     signal = record.p_signal[:, 0]
-    beat_samples, labels = lib.kept_beats(annotation, len(signal), window_size, offset)
-    rr = (lib.rr_intervals(beat_samples, lib.annotated_peaks(annotation), record.fs) - rr_mean) / rr_std
-    windows = lib.beat_windows(lib.filter_signal(signal, record.fs), beat_samples, window_size, offset)
+    beat_samples, labels = dataset.kept_beats(annotation, len(signal), window_size, offset)
+    rr = (dataset.rr_intervals(beat_samples, dataset.annotated_peaks(annotation), record.fs) - rr_mean) / rr_std
+    windows = dataset.beat_windows(dataset.filter_signal(signal, record.fs), beat_samples, window_size, offset)
     X.append(np.concatenate([windows[:, None, :], np.repeat(rr[:, :, None], window_size, axis=2)], axis=1))
     y.append(labels)
 X = torch.tensor(np.concatenate(X), dtype=torch.float32)

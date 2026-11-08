@@ -4,7 +4,9 @@
 import os
 import numpy as np
 import pandas as pd
-import lib
+import dataset
+from config import CONFIG
+from prepare_data import CACHE_FILE, build_cache
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import LinearSVC
@@ -13,30 +15,14 @@ from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_s
 
 SEED = 42
 np.random.seed(SEED)
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
 # Sätt till True först när valet av baslinje är låst
-RUN_TEST = False
+RUN_TEST = True
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-CACHE_FILE = os.path.join(HERE, f"features_cache_w{window_size}_o{offset}.npz")
-RESULTS_FILE = os.path.join(HERE, "results", "baseline_metrics.csv")
-
-
-def build_cache():
-    print("Bygger features (tar ca 1,5 min)...")
-    train = lib.MITBIHFeatureDataset(record_list=lib.train_records, window_size=window_size, offset=offset)
-    val = lib.MITBIHFeatureDataset(record_list=lib.val_records, window_size=window_size, offset=offset,
-                                   templates=train.templates, feature_mean=train.feature_mean, feature_std=train.feature_std)
-    test = lib.MITBIHFeatureDataset(record_list=lib.test_records, window_size=window_size, offset=offset,
-                                    templates=train.templates, feature_mean=train.feature_mean, feature_std=train.feature_std)
-    np.savez(CACHE_FILE,
-             X_train=train.features, y_train=train.labels,
-             X_val=val.features, y_val=val.labels,
-             X_test=test.features, y_test=test.labels,
-             feature_names=train.feature_names)
-
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RESULTS_FILE = os.path.join(ROOT, "results", "baseline_metrics.csv")
 
 if not os.path.exists(CACHE_FILE):
     build_cache()
@@ -57,7 +43,7 @@ X_train_5, X_val_5, X_test_5 = X_train[:, idx], X_val[:, idx], X_test[:, idx]
 def evaluate(model, X, y, name):
     y_pred = model.predict(X)
     print(f"\n--- {name} ---")
-    print(classification_report(y, y_pred, target_names=lib.CLASS_NAMES, digits=4, zero_division=0))
+    print(classification_report(y, y_pred, target_names=dataset.CLASS_NAMES, digits=4, zero_division=0))
     print(confusion_matrix(y, y_pred))
 
     result = {

@@ -10,29 +10,30 @@ import wfdb
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.join(HERE, "..", "..")
-sys.path.insert(0, REPO)
-import lib  # noqa: E402
+sys.path.insert(0, os.path.join(REPO, "src"))
+import dataset  # noqa: E402
+from config import CONFIG  # noqa: E402
 
 # Sätt till True först när allt annat är låst, DS2 ska bara köras en gång
 RUN_TEST = False
 
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 INPUT_RANGE = 4.0   # z-värden mellan -4 och +4 blir 0-1, större värden klipps
 OUT_FILE = os.path.join(REPO, "..", "ai8x_data", "ECG_RR", "ecg_rr.npz")
 
-rr_mean, rr_std = lib.train_rr_stats(window_size, offset)
+rr_mean, rr_std = dataset.train_rr_stats(window_size, offset)
 
 
 def build(records):
     X, y = [], []
     for record_name in records:
-        record = wfdb.rdrecord(lib.directory + record_name)
-        annotation = wfdb.rdann(lib.directory + record_name, 'atr')
+        record = wfdb.rdrecord(dataset.directory + record_name)
+        annotation = wfdb.rdann(dataset.directory + record_name, 'atr')
         signal = record.p_signal[:, 0]
-        beat_samples, labels = lib.kept_beats(annotation, len(signal), window_size, offset)
-        rr = (lib.rr_intervals(beat_samples, lib.annotated_peaks(annotation), record.fs) - rr_mean) / rr_std
-        windows = lib.beat_windows(lib.filter_signal(signal, record.fs), beat_samples, window_size, offset)
+        beat_samples, labels = dataset.kept_beats(annotation, len(signal), window_size, offset)
+        rr = (dataset.rr_intervals(beat_samples, dataset.annotated_peaks(annotation), record.fs) - rr_mean) / rr_std
+        windows = dataset.beat_windows(dataset.filter_signal(signal, record.fs), beat_samples, window_size, offset)
         X.append(np.concatenate([windows[:, None, :], np.repeat(rr[:, :, None], window_size, axis=2)], axis=1))
         y.append(labels)
     X = np.concatenate(X) / (2 * INPUT_RANGE) + 0.5
@@ -41,7 +42,7 @@ def build(records):
 
 
 arrays = {}
-for split, records in [("train", lib.train_records), ("val", lib.val_records)] + ([("test", lib.test_records)] if RUN_TEST else []):
+for split, records in [("train", dataset.train_records), ("val", dataset.val_records)] + ([("test", dataset.test_records)] if RUN_TEST else []):
     arrays[f"X_{split}"], arrays[f"y_{split}"] = build(records)
 
 os.makedirs(os.path.dirname(OUT_FILE), exist_ok=True)

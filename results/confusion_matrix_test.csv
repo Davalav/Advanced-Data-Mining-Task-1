@@ -1,0 +1,13 @@
+model,true,predicted_N,predicted_S,predicted_V,predicted_F
+Random Forest (44 features),N,42857,239,228,931
+Random Forest (44 features),S,1666,8,163,0
+Random Forest (44 features),V,73,27,3119,1
+Random Forest (44 features),F,45,0,231,112
+CNN FP32,N,38793,1057,448,3957
+CNN FP32,S,1477,156,165,39
+CNN FP32,V,258,63,2858,41
+CNN FP32,F,140,5,45,198
+CNN INT8,N,39012,1020,408,3815
+CNN INT8,S,1463,159,177,38
+CNN INT8,V,267,68,2847,38
+CNN INT8,F,150,6,41,191

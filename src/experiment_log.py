@@ -2,9 +2,9 @@ import os
 
 import pandas as pd
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-EXPERIMENTS_FILE = os.path.join(HERE, "results", "experiments.csv")
-COMPARISON_FILE = os.path.join(HERE, "results", "seed_comparison.csv")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+EXPERIMENTS_FILE = os.path.join(ROOT, "results", "experiments.csv")
+COMPARISON_FILE = os.path.join(ROOT, "results", "seed_comparison.csv")
 
 SETTINGS = ["model", "features", "n_parameters", "lr", "batch_size", "epochs", "class_weights", "sampler"]
 

@@ -11,7 +11,8 @@ from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 from sklearn.metrics import (accuracy_score, f1_score, precision_recall_fscore_support,
                              classification_report, confusion_matrix)
 
-import lib
+import dataset
+from prepare_data import CACHE_FILE
 from experiment_log import save_experiment
 
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 42
@@ -21,8 +22,8 @@ USE_SAMPLER = sys.argv[4] == "1" if len(sys.argv) > 4 else False
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-data = np.load(os.path.join(HERE, "features_cache_w100_o0.npz"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+data = np.load(CACHE_FILE)
 
 chosen = ['template_n_distance', 'template_v_distance', 'pre_rr', 'post_rr', 'compensatory_pause_ratio']
 feature_names = list(data["feature_names"])
@@ -49,7 +50,7 @@ model = nn.Sequential(
     nn.Linear(32, 4),
 )
 
-# Samma klassviktning som i train-feature.py
+# Samma klassviktning som i old/train-feature.py
 class_weights = torch.tensor(1.0 / np.sqrt(class_counts), dtype=torch.float32)
 class_weights = class_weights / class_weights.sum() * len(class_counts)
 
@@ -91,7 +92,7 @@ model.eval()
 with torch.no_grad():
     y_pred = model(X_val).argmax(dim=1).numpy()
 
-print(classification_report(y_val, y_pred, target_names=lib.CLASS_NAMES, digits=4, zero_division=0))
+print(classification_report(y_val, y_pred, target_names=dataset.CLASS_NAMES, digits=4, zero_division=0))
 print(confusion_matrix(y_val, y_pred))
 
 result = {
@@ -117,4 +118,4 @@ for i, cls in enumerate(["N", "S", "V", "F"]):
     result[f"f1_{cls}"] = f1[i]
 
 save_experiment(result)
-torch.save(best_state, os.path.join(HERE, "models", f"MLP-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}.pth"))
+torch.save(best_state, os.path.join(ROOT, "models", f"MLP-valF1-{best_f1:.4f}-seed{SEED}-lr{LR}-cw{int(USE_CLASS_WEIGHTS)}-sampler{int(USE_SAMPLER)}.pth"))

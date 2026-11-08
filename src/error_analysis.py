@@ -11,57 +11,59 @@ import torch
 import wfdb
 from ecgdetectors import Detectors
 
-import lib
+import dataset
+import model as cnn
+from config import CONFIG
 
 # Sätt till True först när allt annat är låst, DS2 ska bara köras en gång
-RUN_TEST = False
+RUN_TEST = True
 
-SEED = 42                       # vilken av de tre INT8-modellerna som analyseras
-FILTERS = [16, 32, 64]
+SEED = CONFIG["deployed_seed"]                       # vilken av de tre INT8-modellerna som analyseras
+FILTERS = CONFIG["filters"]
 NOISE_TYPE, NOISE_SNR_DB = "em", 0
 EXAMPLES_PER_TYPE = 3
 CONTEXT_SECONDS = 1.5           # hur mycket signal som visas före och efter slaget
-window_size = 100
-offset = 0
+window_size = CONFIG["window_size"]
+offset = CONFIG["offset"]
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-NOISE_DIR = os.path.join(HERE, "..", "mit-bih-noise-stress-test-database-1.0.0") + os.sep
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NOISE_DIR = dataset.noise_directory
 split = "test" if RUN_TEST else "val"
-records = lib.test_records if RUN_TEST else lib.val_records
-OUT_DIR = os.path.join(HERE, "results", "error_analysis")
+records = dataset.test_records if RUN_TEST else dataset.val_records
+OUT_DIR = os.path.join(ROOT, "results", "error_analysis")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 CLASSES = ["N", "S", "V", "F"]
 INK, SECONDARY, MUTED, SURFACE = "#0b0b0b", "#52514e", "#898781", "#fcfcfb"
 TRUE_COLOR, PREDICTED_COLOR = "#2a78d6", "#eb6834"
 
-rr_mean, rr_std = lib.train_rr_stats(window_size, offset)
+rr_mean, rr_std = dataset.train_rr_stats(window_size, offset)
 noise = wfdb.rdrecord(NOISE_DIR + NOISE_TYPE).p_signal[:, 0]
 
-int8_file, = glob.glob(os.path.join(HERE, "models", f"SmallCNN-INT8-valF1-*-seed{SEED}-filters{'-'.join(map(str, FILTERS))}.pth"))
-model = lib.load_cnn_int8(int8_file, FILTERS, window_size)
+int8_file, = glob.glob(os.path.join(ROOT, "models", f"SmallCNN-INT8-valF1-*-seed{SEED}-filters{'-'.join(map(str, FILTERS))}.pth"))
+model = cnn.load_cnn_int8(int8_file, FILTERS, window_size)
 
 
 def load_beats(noisy):
     # Ren signal använder annoteringarnas RR, brusig signal RR från detektorn, som i noise_test.py
     signals, rows, windows, rr = {}, [], [], []
     for record_name in records:
-        record = wfdb.rdrecord(lib.directory + record_name)
-        annotation = wfdb.rdann(lib.directory + record_name, 'atr')
+        record = wfdb.rdrecord(dataset.directory + record_name)
+        annotation = wfdb.rdann(dataset.directory + record_name, 'atr')
         fs = record.fs
         signal = record.p_signal[:, 0]
         if noisy:
-            signal = lib.add_noise(signal, noise, NOISE_SNR_DB)
+            signal = dataset.add_noise(signal, noise, NOISE_SNR_DB)
             peaks = np.sort(Detectors(fs).pan_tompkins_detector(signal))
         else:
-            peaks = lib.annotated_peaks(annotation)
+            peaks = dataset.annotated_peaks(annotation)
 
-        beat_samples, labels = lib.kept_beats(annotation, len(signal), window_size, offset)
-        filtered = lib.filter_signal(signal, fs)
+        beat_samples, labels = dataset.kept_beats(annotation, len(signal), window_size, offset)
+        filtered = dataset.filter_signal(signal, fs)
         signals[record_name] = (filtered, annotation, peaks, fs)
         rows += [(record_name, sample, label) for sample, label in zip(beat_samples, labels)]
-        windows.append(lib.beat_windows(filtered, beat_samples, window_size, offset))
-        rr.append(lib.rr_intervals(beat_samples, peaks, fs))
+        windows.append(dataset.beat_windows(filtered, beat_samples, window_size, offset))
+        rr.append(dataset.rr_intervals(beat_samples, peaks, fs))
 
     beats = pd.DataFrame(rows, columns=["record", "sample", "label"])
     rr = np.concatenate(rr)
@@ -122,7 +124,7 @@ def plot_examples(file_name, title, beats, windows, signals, chosen):
 
         top = filtered[start:end].max()
         for other, symbol in zip(annotation.sample, annotation.symbol):
-            if start <= other < end and symbol in lib.RR_BEAT_SYMBOLS:
+            if start <= other < end and symbol in dataset.RR_BEAT_SYMBOLS:
                 ax.text((other - sample) / fs, top, symbol, ha="center", va="bottom", color=SECONDARY, fontsize=8)
         if beats is noisy:
             shown = peaks[(peaks >= start) & (peaks < end)]
