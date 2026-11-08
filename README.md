@@ -127,6 +127,40 @@ The noise test only uses the noise records `bw`, `em` and `ma`. The ready-made n
 
 The split is by record (patient), so no patient appears in more than one split. All model choices were made on the validation records. DS2 was used once, for the final evaluation.
 
+### Preprocessing, exclusions and class mapping
+
+All steps are in `src/dataset.py` and give the same result on every run.
+
+| Step | Setting |
+|---|---|
+| Records | The 44 non-paced records, split as above. The paced records 102, 104, 107 and 217 are excluded. |
+| Lead | Channel 0 (MLII), 360 Hz |
+| Filtering | 4th-order Butterworth band-pass 0.5–20 Hz (zero-phase), then a 50 Hz notch (Q = 30). The 20 Hz low-pass also removes the 60 Hz mains frequency of the US recordings. |
+| Beat window | 100 samples (278 ms) centred on the annotated R-peak, z-normalized per window |
+| Excluded beats | Beats with a symbol outside the mapping below (for example `Q`), and beats whose window would extend past the start or end of the record |
+| RR input | `pre_rr` and `post_rr`: time to the previous and next beat annotation (non-beat annotations such as `+` and `~` are skipped), normalized with the training mean and standard deviation. In the noise test, RR comes from a Pan-Tompkins detector instead. |
+| Hand-crafted features (baseline) | 44 features per beat; beat templates and normalization are fitted on the training records only |
+
+| AAMI class | MIT-BIH beat symbols |
+|---|---|
+| N | N, L, R, e, j |
+| S | A, a, J, S |
+| V | V, E |
+| F | F |
+
+Randomness is controlled by seeds (42, 1 and 2 for the CNN, 42 for the baselines), and retraining seed 42 reproduces the same model.
+
+## CRISP-DM stages
+
+| Stage | Where in the project |
+|---|---|
+| 1. Business understanding | Report: problem, MAX78002 constraints and success criteria |
+| 2. Data understanding | `notebooks/EDA.ipynb` |
+| 3. Data preparation | `src/dataset.py`, `src/prepare_data.py` |
+| 4. Modeling | `src/baseline.py`, `src/train.py`, `src/train_mlp.py`, `src/quantize.py`, `results/experiments.csv` |
+| 5. Evaluation | `src/evaluate.py`, `src/noise_test.py`, `src/error_analysis.py`, `results/` |
+| 6. Deployment | `src/deployment.py`, `max78002/` |
+
 ## How to run
 
 From the repo root, in this order:
