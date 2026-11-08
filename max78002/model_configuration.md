@@ -44,6 +44,5 @@ In the INT8 model each Conv1d and ReLU pair is fused into one ConvReLU1d layer.
 ## Notes
 
 - Verified in software only (Python, PyTorch). The model has not been run on MAX78002 hardware.
-- The model is quantized with PyTorch, not with Analog Devices ai8x-training, which uses its own quantization.
+- This INT8 model is quantized with PyTorch. The same layers were also trained, quantized and synthesized with Analog Devices ai8x-training and ai8x-synthesis, see `ai8x_training/README.md` and `synthesis_output/`.
 - The RR values are not computed by the CNN accelerator. They come from an R-peak detector running on the microcontroller core and are passed to the CNN as input channels.
-- Not yet checked against the ai8x documentation: Conv1d with kernel 5 and padding 2, how pooling after a convolution maps to the accelerator, and a Linear layer with 768 inputs.

@@ -1,0 +1,50 @@
+---
+# Network description for ai8x-synthesis: CNN with RR input on MAX78002.
+# Same layers as models/ai87net-ecg.py. Pooling runs before the operation in each layer.
+
+arch: ai87ecgnet
+dataset: ECG_RR
+
+layers:
+  # Layer 0: Conv1d 3 -> 16, kernel 5, padding 2, ReLU. Input 3 x 100
+  - processors: 0x0000000000000007
+    data_format: HWC
+    out_offset: 0x2000
+    operation: Conv1d
+    kernel_size: 5
+    pad: 2
+    activate: ReLU
+
+  # Layer 1: max pool 2, then Conv1d 16 -> 32, kernel 5, padding 2, ReLU
+  - processors: 0x000000000000ffff
+    out_offset: 0x0000
+    max_pool: 2
+    pool_stride: 2
+    operation: Conv1d
+    kernel_size: 5
+    pad: 2
+    activate: ReLU
+
+  # Layer 2: max pool 2, then Conv1d 32 -> 64, kernel 5, padding 2, ReLU
+  - processors: 0x00000000ffffffff
+    out_offset: 0x2000
+    max_pool: 2
+    pool_stride: 2
+    operation: Conv1d
+    kernel_size: 5
+    pad: 2
+    activate: ReLU
+
+  # Layer 3: max pool 2 only, since pooling cannot share a layer with flatten
+  - processors: 0xffffffffffffffff
+    out_offset: 0x0000
+    max_pool: 2
+    pool_stride: 2
+    operation: None
+
+  # Layer 4: flatten 64 x 12 = 768, Linear 768 -> 4 with 32-bit output
+  - processors: 0xffffffffffffffff
+    out_offset: 0x2000
+    flatten: true
+    operation: MLP
+    output_width: 32

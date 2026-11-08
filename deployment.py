@@ -23,9 +23,7 @@ offset = 0
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(HERE, "max78002")
 QUANTIZATION_DIR = os.path.join(OUT_DIR, "quantization_output")
-SYNTHESIS_DIR = os.path.join(OUT_DIR, "synthesis_output")
 os.makedirs(QUANTIZATION_DIR, exist_ok=True)
-os.makedirs(SYNTHESIS_DIR, exist_ok=True)
 
 filters_name = "-".join(map(str, FILTERS))
 fp32_file, = glob.glob(os.path.join(HERE, "models", f"SmallCNN-valF1-*-seed{SEED}-lr0.02-cw0-sampler1-rr1-filters{filters_name}.pth"))
@@ -172,21 +170,14 @@ lines = [
     "## Notes",
     "",
     "- Verified in software only (Python, PyTorch). The model has not been run on MAX78002 hardware.",
-    "- The model is quantized with PyTorch, not with Analog Devices ai8x-training, which uses its own quantization.",
+    "- This INT8 model is quantized with PyTorch. The same layers were also trained, quantized and synthesized "
+    "with Analog Devices ai8x-training and ai8x-synthesis, see `ai8x_training/README.md` and `synthesis_output/`.",
     "- The RR values are not computed by the CNN accelerator. They come from an R-peak detector running on the "
     "microcontroller core and are passed to the CNN as input channels.",
-    "- Not yet checked against the ai8x documentation: Conv1d with kernel 5 and padding 2, how pooling after a "
-    "convolution maps to the accelerator, and a Linear layer with 768 inputs.",
 ]
 CONFIG_FILE = os.path.join(OUT_DIR, "model_configuration.md")
 with open(CONFIG_FILE, "w", encoding="utf-8") as f:
     f.write("\n".join(lines) + "\n")
-
-with open(os.path.join(SYNTHESIS_DIR, "README.md"), "w", encoding="utf-8") as f:
-    f.write("# Synthesis output\n\n"
-            "Synthesis to C code with Analog Devices ai8x-synthesis was not performed. "
-            "The course instructor confirmed that deployment may stay in Python, so the model is verified in software only. "
-            "See `../model_configuration.md` for the layer table, memory use and software verification.\n")
 
 print("\n".join(lines))
 print(f"\nSparade {CONFIG_FILE} och {JSON_FILE}")

@@ -1,0 +1,13 @@
+Configuring device: MAX78002
+Converting checkpoint file /home/david/ai8x/ai8x-synthesis/trained/ai87-ecg-rr-qat8.pth.tar to /home/david/ai8x/ai8x-synthesis/trained/ai87-ecg-rr-qat8-q.pth.tar
+
+Model keys (state_dict):
+conv1.output_shift, conv1.activation_threshold, conv1.final_scale, conv1.weight_bits, conv1.bias_bits, conv1.quantize_activation, conv1.clamp_activation, conv1.adjust_output_shift, conv1.shift_quantile, conv1.op.weight, conv1.op.bias, conv2.output_shift, conv2.activation_threshold, conv2.final_scale, conv2.weight_bits, conv2.bias_bits, conv2.quantize_activation, conv2.clamp_activation, conv2.adjust_output_shift, conv2.shift_quantile, conv2.op.weight, conv2.op.bias, conv3.output_shift, conv3.activation_threshold, conv3.final_scale, conv3.weight_bits, conv3.bias_bits, conv3.quantize_activation, conv3.clamp_activation, conv3.adjust_output_shift, conv3.shift_quantile, conv3.op.weight, conv3.op.bias, pool.output_shift, pool.activation_threshold, pool.final_scale, pool.weight_bits, pool.bias_bits, pool.quantize_activation, pool.clamp_activation, pool.adjust_output_shift, pool.shift_quantile, fc.output_shift, fc.activation_threshold, fc.final_scale, fc.weight_bits, fc.bias_bits, fc.quantize_activation, fc.clamp_activation, fc.adjust_output_shift, fc.shift_quantile, fc.op.weight, fc.op.bias
+conv1.op.weight avg_max: 0.33089924 max: 0.6928273 mean: -0.01745385 factor: [128.] bits: 8
+conv1.op.bias avg_max: 0.03833891 max: 0.40149322 mean: -0.03833891 factor: [128.] bits: 8
+conv2.op.weight avg_max: 0.36291248 max: 0.7322418 mean: -0.005597424 factor: [128.] bits: 8
+conv2.op.bias avg_max: 0.02858477 max: 0.13281818 mean: 0.02858477 factor: [128.] bits: 8
+conv3.op.weight avg_max: 0.37864143 max: 1.3699683 mean: -0.00069243263 factor: [64.] bits: 8
+conv3.op.bias avg_max: 0.004236499 max: 0.05714127 mean: 0.004236499 factor: [64.] bits: 8
+fc.op.weight avg_max: 0.60900307 max: 0.85488766 mean: -0.012225649 factor: [128.] bits: 8
+fc.op.bias avg_max: 0.00070953486 max: 0.006551852 mean: 0.00070953486 factor: [128.] bits: 8

@@ -1,0 +1,53 @@
+Log file for this run: /tmp/ai8x_evaluate/2026.11.08-171215/2026.11.08-171215.log
+Configuring device: MAX78002, simulate=True.
+No CUDA, ROCm, or MPS hardware acceleration, training will be slow
+=> loading checkpoint /home/david/ai8x/ai8x-synthesis/trained/ai87-ecg-rr-qat8-q.pth.tar
+=> Checkpoint contents:
++----------------------+-------------+------------+
+| Key                  | Type        | Value      |
+|----------------------+-------------+------------|
+| arch                 | str         | ai87ecgnet |
+| compression_sched    | dict        |            |
+| epoch                | int         | 54         |
+| extras               | dict        |            |
+| optimizer_state_dict | dict        |            |
+| optimizer_type       | type        | Adam       |
+| state_dict           | OrderedDict |            |
++----------------------+-------------+------------+
+
+=> Checkpoint['extras'] contents:
++-----------------+--------+------------------+
+| Key             | Type   | Value            |
+|-----------------+--------+------------------|
+| best_epoch      | int    | 54               |
+| best_mAP        | int    | 0                |
+| best_top1       | float  | 98.8360814742968 |
+| clipping_method | str    | MAX_BIT_SHIFT    |
+| current_mAP     | int    | 0                |
+| current_top1    | float  | 98.8360814742968 |
++-----------------+--------+------------------+
+
+Loaded compression schedule from checkpoint (epoch 54)
+=> loaded 'state_dict' from checkpoint '/home/david/ai8x/ai8x-synthesis/trained/ai87-ecg-rr-qat8-q.pth.tar'
+Optimizer Type: <class 'torch.optim.sgd.SGD'>
+Optimizer Args: {'lr': 0.1, 'momentum': 0.9, 'dampening': 0, 'weight_decay': 0.0001, 'nesterov': False, 'maximize': False, 'foreach': None, 'differentiable': False, 'fused': None}
+torch.compile() not available, using "eager" mode
+Dataset sizes:
+	test=9763
+--- test (ckpt) ---------------------
+9763 samples (256 per mini-batch)
+==> Saving sample at index 0 to sample_ecg_rr.npy
+Test: [   10/   39]    Loss 0.511005    Top1 90.195312    
+Test: [   20/   39]    Loss 0.525290    Top1 89.589844    
+Test: [   30/   39]    Loss 0.481186    Top1 90.039062    
+Test: [   39/   39]    Loss 0.470728    Top1 90.218171    
+==> Top1: 90.218    Loss: 0.471
+
+==> Confusion:
+[[8486   57   50  195]
+ [  67   15  101   23]
+ [ 239  186  307   10]
+ [  25    0    2    0]]
+
+
+Log file for this run: /tmp/ai8x_evaluate/2026.11.08-171215/2026.11.08-171215.log

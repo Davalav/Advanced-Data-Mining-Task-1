@@ -1,0 +1,1144 @@
+2026-11-08 17:05:58,741 - Log file for this run: /home/david/ai8x/ai8x-training/logs/ecg_rr___2026.11.08-170558/ecg_rr___2026.11.08-170558.log
+2026-11-08 17:05:58,741 - Configuring device: MAX78002, simulate=False.
+2026-11-08 17:05:58,747 - No CUDA, ROCm, or MPS hardware acceleration, training will be slow
+2026-11-08 17:05:58,765 - Optimizer Type: <class 'torch.optim.adam.Adam'>
+2026-11-08 17:05:58,765 - Optimizer Args: {'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0.0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None}
+2026-11-08 17:05:59,570 - Reading compression schedule from: policies/schedule_ecg.yaml
+2026-11-08 17:05:59,574 - torch.compile() not available, using "eager" mode
+2026-11-08 17:05:59,574 - Dataset sizes:
+	training=37122
+	validation=4124
+	test=9763
+2026-11-08 17:05:59,574 - 
+
+2026-11-08 17:05:59,574 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:02,545 - Epoch: [0][  100/  146]    Overall Loss 0.646815    Objective Loss 0.646815                                        LR 0.001000    Time 0.029650    
+2026-11-08 17:06:03,586 - Epoch: [0][  146/  146]    Overall Loss 0.526913    Objective Loss 0.526913    Top1 89.922481    LR 0.001000    Time 0.027419    
+2026-11-08 17:06:03,601 - --- validate (epoch=0)-----------
+2026-11-08 17:06:03,601 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:03,908 - Epoch: [0][   17/   17]    Loss 0.279528    Top1 92.022308    
+2026-11-08 17:06:03,925 - ==> Top1: 92.022    Loss: 0.280
+
+2026-11-08 17:06:03,925 - ==> Confusion:
+[[2536   31   37   41]
+ [  59  354    9    0]
+ [  72   26  677    9]
+ [  38    1    6  228]]
+
+2026-11-08 17:06:03,927 - ==> Best [Top1: 92.022   Params: 16112 on epoch: 0]
+2026-11-08 17:06:03,927 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:03,930 - 
+
+2026-11-08 17:06:03,931 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:07,206 - Epoch: [1][  100/  146]    Overall Loss 0.213833    Objective Loss 0.213833                                        LR 0.001000    Time 0.032696    
+2026-11-08 17:06:08,085 - Epoch: [1][  146/  146]    Overall Loss 0.202785    Objective Loss 0.202785    Top1 95.348837    LR 0.001000    Time 0.028402    
+2026-11-08 17:06:08,107 - --- validate (epoch=1)-----------
+2026-11-08 17:06:08,107 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:08,415 - Epoch: [1][   17/   17]    Loss 0.193571    Top1 94.083414    
+2026-11-08 17:06:08,429 - ==> Top1: 94.083    Loss: 0.194
+
+2026-11-08 17:06:08,430 - ==> Confusion:
+[[2575   22   36   12]
+ [  36  378    8    0]
+ [  27   11  744    2]
+ [  62    1   27  183]]
+
+2026-11-08 17:06:08,432 - ==> Best [Top1: 94.083   Params: 16112 on epoch: 1]
+2026-11-08 17:06:08,432 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:08,436 - 
+
+2026-11-08 17:06:08,436 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:11,037 - Epoch: [2][  100/  146]    Overall Loss 0.161481    Objective Loss 0.161481                                        LR 0.001000    Time 0.025951    
+2026-11-08 17:06:12,100 - Epoch: [2][  146/  146]    Overall Loss 0.155922    Objective Loss 0.155922    Top1 94.573643    LR 0.001000    Time 0.025037    
+2026-11-08 17:06:12,125 - --- validate (epoch=2)-----------
+2026-11-08 17:06:12,126 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:12,476 - Epoch: [2][   17/   17]    Loss 0.175542    Top1 94.786615    
+2026-11-08 17:06:12,495 - ==> Top1: 94.787    Loss: 0.176
+
+2026-11-08 17:06:12,495 - ==> Confusion:
+[[2526   21   23   75]
+ [  25  385   12    0]
+ [  26    7  744    7]
+ [  14    0    5  254]]
+
+2026-11-08 17:06:12,497 - ==> Best [Top1: 94.787   Params: 16112 on epoch: 2]
+2026-11-08 17:06:12,497 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:12,501 - 
+
+2026-11-08 17:06:12,501 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:14,944 - Epoch: [3][  100/  146]    Overall Loss 0.140883    Objective Loss 0.140883                                        LR 0.001000    Time 0.024385    
+2026-11-08 17:06:15,999 - Epoch: [3][  146/  146]    Overall Loss 0.136761    Objective Loss 0.136761    Top1 96.511628    LR 0.001000    Time 0.023906    
+2026-11-08 17:06:16,028 - --- validate (epoch=3)-----------
+2026-11-08 17:06:16,028 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:16,383 - Epoch: [3][   17/   17]    Loss 0.203043    Top1 93.671193    
+2026-11-08 17:06:16,402 - ==> Top1: 93.671    Loss: 0.203
+
+2026-11-08 17:06:16,403 - ==> Confusion:
+[[2624    4    3   14]
+ [  70  342   10    0]
+ [  90    4  672   18]
+ [  45    0    3  225]]
+
+2026-11-08 17:06:16,407 - ==> Best [Top1: 94.787   Params: 16112 on epoch: 2]
+2026-11-08 17:06:16,407 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:16,412 - 
+
+2026-11-08 17:06:16,412 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:18,978 - Epoch: [4][  100/  146]    Overall Loss 0.132589    Objective Loss 0.132589                                        LR 0.001000    Time 0.025604    
+2026-11-08 17:06:20,096 - Epoch: [4][  146/  146]    Overall Loss 0.125464    Objective Loss 0.125464    Top1 97.674419    LR 0.001000    Time 0.025174    
+2026-11-08 17:06:20,125 - --- validate (epoch=4)-----------
+2026-11-08 17:06:20,125 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:20,409 - Epoch: [4][   17/   17]    Loss 0.129617    Top1 95.853540    
+2026-11-08 17:06:20,426 - ==> Top1: 95.854    Loss: 0.130
+
+2026-11-08 17:06:20,426 - ==> Confusion:
+[[2576    9   17   43]
+ [  29  378   15    0]
+ [  22    5  748    9]
+ [  17    0    5  251]]
+
+2026-11-08 17:06:20,427 - ==> Best [Top1: 95.854   Params: 16112 on epoch: 4]
+2026-11-08 17:06:20,427 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:20,430 - 
+
+2026-11-08 17:06:20,431 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:23,436 - Epoch: [5][  100/  146]    Overall Loss 0.104835    Objective Loss 0.104835                                        LR 0.001000    Time 0.029979    
+2026-11-08 17:06:24,506 - Epoch: [5][  146/  146]    Overall Loss 0.105132    Objective Loss 0.105132    Top1 97.286822    LR 0.001000    Time 0.027842    
+2026-11-08 17:06:24,533 - --- validate (epoch=5)-----------
+2026-11-08 17:06:24,533 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:24,867 - Epoch: [5][   17/   17]    Loss 0.111079    Top1 96.677983    
+2026-11-08 17:06:24,886 - ==> Top1: 96.678    Loss: 0.111
+
+2026-11-08 17:06:24,887 - ==> Confusion:
+[[2612   11   11   11]
+ [  23  390    9    0]
+ [  22    7  749    6]
+ [  29    0    8  236]]
+
+2026-11-08 17:06:24,888 - ==> Best [Top1: 96.678   Params: 16112 on epoch: 5]
+2026-11-08 17:06:24,888 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:24,893 - 
+
+2026-11-08 17:06:24,893 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:27,763 - Epoch: [6][  100/  146]    Overall Loss 0.098073    Objective Loss 0.098073                                        LR 0.001000    Time 0.028643    
+2026-11-08 17:06:28,940 - Epoch: [6][  146/  146]    Overall Loss 0.097073    Objective Loss 0.097073    Top1 98.062016    LR 0.001000    Time 0.027661    
+2026-11-08 17:06:28,962 - --- validate (epoch=6)-----------
+2026-11-08 17:06:28,963 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:29,318 - Epoch: [6][   17/   17]    Loss 0.103195    Top1 96.750727    
+2026-11-08 17:06:29,341 - ==> Top1: 96.751    Loss: 0.103
+
+2026-11-08 17:06:29,341 - ==> Confusion:
+[[2601   20   10   14]
+ [  20  394    8    0]
+ [  22    9  745    8]
+ [  15    2    6  250]]
+
+2026-11-08 17:06:29,343 - ==> Best [Top1: 96.751   Params: 16112 on epoch: 6]
+2026-11-08 17:06:29,343 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:29,348 - 
+
+2026-11-08 17:06:29,348 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:32,037 - Epoch: [7][  100/  146]    Overall Loss 0.090045    Objective Loss 0.090045                                        LR 0.001000    Time 0.026841    
+2026-11-08 17:06:33,016 - Epoch: [7][  146/  146]    Overall Loss 0.089418    Objective Loss 0.089418    Top1 95.348837    LR 0.001000    Time 0.025077    
+2026-11-08 17:06:33,037 - --- validate (epoch=7)-----------
+2026-11-08 17:06:33,037 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:33,306 - Epoch: [7][   17/   17]    Loss 0.096757    Top1 96.896217    
+2026-11-08 17:06:33,325 - ==> Top1: 96.896    Loss: 0.097
+
+2026-11-08 17:06:33,326 - ==> Confusion:
+[[2612   15    2   16]
+ [  20  394    8    0]
+ [  36    8  732    8]
+ [  11    0    4  258]]
+
+2026-11-08 17:06:33,327 - ==> Best [Top1: 96.896   Params: 16112 on epoch: 7]
+2026-11-08 17:06:33,327 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:33,330 - 
+
+2026-11-08 17:06:33,330 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:36,353 - Epoch: [8][  100/  146]    Overall Loss 0.083963    Objective Loss 0.083963                                        LR 0.001000    Time 0.030170    
+2026-11-08 17:06:37,509 - Epoch: [8][  146/  146]    Overall Loss 0.084375    Objective Loss 0.084375    Top1 99.224806    LR 0.001000    Time 0.028562    
+2026-11-08 17:06:37,541 - --- validate (epoch=8)-----------
+2026-11-08 17:06:37,542 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:37,881 - Epoch: [8][   17/   17]    Loss 0.092498    Top1 97.017459    
+2026-11-08 17:06:37,900 - ==> Top1: 97.017    Loss: 0.092
+
+2026-11-08 17:06:37,902 - ==> Confusion:
+[[2614    8   14    9]
+ [  27  383   12    0]
+ [  18    3  756    7]
+ [  19    0    6  248]]
+
+2026-11-08 17:06:37,903 - ==> Best [Top1: 97.017   Params: 16112 on epoch: 8]
+2026-11-08 17:06:37,903 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:37,908 - 
+
+2026-11-08 17:06:37,908 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:40,510 - Epoch: [9][  100/  146]    Overall Loss 0.080620    Objective Loss 0.080620                                        LR 0.001000    Time 0.025977    
+2026-11-08 17:06:41,546 - Epoch: [9][  146/  146]    Overall Loss 0.079411    Objective Loss 0.079411    Top1 98.449612    LR 0.001000    Time 0.024872    
+2026-11-08 17:06:41,572 - --- validate (epoch=9)-----------
+2026-11-08 17:06:41,572 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:41,972 - Epoch: [9][   17/   17]    Loss 0.086044    Top1 97.090204    
+2026-11-08 17:06:41,992 - ==> Top1: 97.090    Loss: 0.086
+
+2026-11-08 17:06:41,994 - ==> Confusion:
+[[2613   10   12   10]
+ [  20  392   10    0]
+ [  21    6  749    8]
+ [  19    1    3  250]]
+
+2026-11-08 17:06:41,995 - ==> Best [Top1: 97.090   Params: 16112 on epoch: 9]
+2026-11-08 17:06:41,995 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:42,000 - 
+
+2026-11-08 17:06:42,000 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:45,536 - Epoch: [10][  100/  146]    Overall Loss 0.073363    Objective Loss 0.073363                                        LR 0.001000    Time 0.035297    
+2026-11-08 17:06:46,623 - Epoch: [10][  146/  146]    Overall Loss 0.073848    Objective Loss 0.073848    Top1 96.511628    LR 0.001000    Time 0.031600    
+2026-11-08 17:06:46,653 - --- validate (epoch=10)-----------
+2026-11-08 17:06:46,654 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:46,998 - Epoch: [10][   17/   17]    Loss 0.076566    Top1 97.623666    
+2026-11-08 17:06:47,020 - ==> Top1: 97.624    Loss: 0.077
+
+2026-11-08 17:06:47,021 - ==> Confusion:
+[[2609   15   12    9]
+ [   9  401   12    0]
+ [  14    6  759    5]
+ [  11    0    5  257]]
+
+2026-11-08 17:06:47,022 - ==> Best [Top1: 97.624   Params: 16112 on epoch: 10]
+2026-11-08 17:06:47,022 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:47,028 - 
+
+2026-11-08 17:06:47,028 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:50,021 - Epoch: [11][  100/  146]    Overall Loss 0.070952    Objective Loss 0.070952                                        LR 0.001000    Time 0.029877    
+2026-11-08 17:06:50,883 - Epoch: [11][  146/  146]    Overall Loss 0.069019    Objective Loss 0.069019    Top1 98.449612    LR 0.001000    Time 0.026349    
+2026-11-08 17:06:50,907 - --- validate (epoch=11)-----------
+2026-11-08 17:06:50,907 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:51,173 - Epoch: [11][   17/   17]    Loss 0.078409    Top1 97.720660    
+2026-11-08 17:06:51,189 - ==> Top1: 97.721    Loss: 0.078
+
+2026-11-08 17:06:51,189 - ==> Confusion:
+[[2600   12   16   17]
+ [   9  402   11    0]
+ [  11    4  764    5]
+ [   5    1    3  264]]
+
+2026-11-08 17:06:51,190 - ==> Best [Top1: 97.721   Params: 16112 on epoch: 11]
+2026-11-08 17:06:51,190 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:51,193 - 
+
+2026-11-08 17:06:51,194 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:53,781 - Epoch: [12][  100/  146]    Overall Loss 0.063939    Objective Loss 0.063939                                        LR 0.001000    Time 0.025820    
+2026-11-08 17:06:54,841 - Epoch: [12][  146/  146]    Overall Loss 0.064457    Objective Loss 0.064457    Top1 98.062016    LR 0.001000    Time 0.024924    
+2026-11-08 17:06:54,864 - --- validate (epoch=12)-----------
+2026-11-08 17:06:54,864 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:55,204 - Epoch: [12][   17/   17]    Loss 0.073276    Top1 97.672163    
+2026-11-08 17:06:55,224 - ==> Top1: 97.672    Loss: 0.073
+
+2026-11-08 17:06:55,224 - ==> Confusion:
+[[2604   15   19    7]
+ [   6  406   10    0]
+ [   8    5  767    4]
+ [  12    0   10  251]]
+
+2026-11-08 17:06:55,225 - ==> Best [Top1: 97.721   Params: 16112 on epoch: 11]
+2026-11-08 17:06:55,226 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:55,229 - 
+
+2026-11-08 17:06:55,230 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:06:57,501 - Epoch: [13][  100/  146]    Overall Loss 0.060536    Objective Loss 0.060536                                        LR 0.001000    Time 0.022664    
+2026-11-08 17:06:58,375 - Epoch: [13][  146/  146]    Overall Loss 0.060582    Objective Loss 0.060582    Top1 98.449612    LR 0.001000    Time 0.021496    
+2026-11-08 17:06:58,395 - --- validate (epoch=13)-----------
+2026-11-08 17:06:58,395 - 4124 samples (256 per mini-batch)
+2026-11-08 17:06:58,673 - Epoch: [13][   17/   17]    Loss 0.074164    Top1 97.817653    
+2026-11-08 17:06:58,690 - ==> Top1: 97.818    Loss: 0.074
+
+2026-11-08 17:06:58,690 - ==> Confusion:
+[[2601   20   17    7]
+ [   4  406   12    0]
+ [  10    1  769    4]
+ [   9    0    6  258]]
+
+2026-11-08 17:06:58,691 - ==> Best [Top1: 97.818   Params: 16112 on epoch: 13]
+2026-11-08 17:06:58,691 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:06:58,695 - 
+
+2026-11-08 17:06:58,695 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:00,836 - Epoch: [14][  100/  146]    Overall Loss 0.060312    Objective Loss 0.060312                                        LR 0.001000    Time 0.021369    
+2026-11-08 17:07:01,743 - Epoch: [14][  146/  146]    Overall Loss 0.062136    Objective Loss 0.062136    Top1 96.899225    LR 0.001000    Time 0.020829    
+2026-11-08 17:07:01,762 - --- validate (epoch=14)-----------
+2026-11-08 17:07:01,762 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:02,153 - Epoch: [14][   17/   17]    Loss 0.192378    Top1 93.501455    
+2026-11-08 17:07:02,170 - ==> Top1: 93.501    Loss: 0.192
+
+2026-11-08 17:07:02,171 - ==> Confusion:
+[[2631    5    7    2]
+ [  24  387   11    0]
+ [  30    2  751    1]
+ [ 176    0   10   87]]
+
+2026-11-08 17:07:02,172 - ==> Best [Top1: 97.818   Params: 16112 on epoch: 13]
+2026-11-08 17:07:02,172 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:02,175 - 
+
+2026-11-08 17:07:02,175 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:05,026 - Epoch: [15][  100/  146]    Overall Loss 0.100414    Objective Loss 0.100414                                        LR 0.001000    Time 0.028458    
+2026-11-08 17:07:05,887 - Epoch: [15][  146/  146]    Overall Loss 0.087057    Objective Loss 0.087057    Top1 98.449612    LR 0.001000    Time 0.025376    
+2026-11-08 17:07:05,912 - --- validate (epoch=15)-----------
+2026-11-08 17:07:05,913 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:06,173 - Epoch: [15][   17/   17]    Loss 0.069983    Top1 97.696411    
+2026-11-08 17:07:06,190 - ==> Top1: 97.696    Loss: 0.070
+
+2026-11-08 17:07:06,191 - ==> Confusion:
+[[2602    9   19   15]
+ [   8  405    9    0]
+ [  15    4  760    5]
+ [   7    1    3  262]]
+
+2026-11-08 17:07:06,192 - ==> Best [Top1: 97.818   Params: 16112 on epoch: 13]
+2026-11-08 17:07:06,192 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:06,195 - 
+
+2026-11-08 17:07:06,195 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:08,319 - Epoch: [16][  100/  146]    Overall Loss 0.053010    Objective Loss 0.053010                                        LR 0.001000    Time 0.021198    
+2026-11-08 17:07:09,203 - Epoch: [16][  146/  146]    Overall Loss 0.053297    Objective Loss 0.053297    Top1 98.449612    LR 0.001000    Time 0.020556    
+2026-11-08 17:07:09,220 - --- validate (epoch=16)-----------
+2026-11-08 17:07:09,220 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:09,471 - Epoch: [16][   17/   17]    Loss 0.070880    Top1 97.769156    
+2026-11-08 17:07:09,488 - ==> Top1: 97.769    Loss: 0.071
+
+2026-11-08 17:07:09,489 - ==> Confusion:
+[[2613    7   11   14]
+ [  17  396    9    0]
+ [  16    2  758    8]
+ [   6    0    2  265]]
+
+2026-11-08 17:07:09,491 - ==> Best [Top1: 97.818   Params: 16112 on epoch: 13]
+2026-11-08 17:07:09,491 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:09,494 - 
+
+2026-11-08 17:07:09,494 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:11,712 - Epoch: [17][  100/  146]    Overall Loss 0.051107    Objective Loss 0.051107                                        LR 0.001000    Time 0.022133    
+2026-11-08 17:07:12,619 - Epoch: [17][  146/  146]    Overall Loss 0.051857    Objective Loss 0.051857    Top1 97.674419    LR 0.001000    Time 0.021356    
+2026-11-08 17:07:12,640 - --- validate (epoch=17)-----------
+2026-11-08 17:07:12,640 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:12,918 - Epoch: [17][   17/   17]    Loss 0.086771    Top1 97.381183    
+2026-11-08 17:07:12,933 - ==> Top1: 97.381    Loss: 0.087
+
+2026-11-08 17:07:12,934 - ==> Confusion:
+[[2560   28   38   19]
+ [   1  415    6    0]
+ [   1    3  776    4]
+ [   2    1    5  265]]
+
+2026-11-08 17:07:12,935 - ==> Best [Top1: 97.818   Params: 16112 on epoch: 13]
+2026-11-08 17:07:12,935 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:12,938 - 
+
+2026-11-08 17:07:12,939 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:15,114 - Epoch: [18][  100/  146]    Overall Loss 0.080856    Objective Loss 0.080856                                        LR 0.001000    Time 0.021712    
+2026-11-08 17:07:15,983 - Epoch: [18][  146/  146]    Overall Loss 0.072519    Objective Loss 0.072519    Top1 96.899225    LR 0.001000    Time 0.020805    
+2026-11-08 17:07:16,005 - --- validate (epoch=18)-----------
+2026-11-08 17:07:16,005 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:16,285 - Epoch: [18][   17/   17]    Loss 0.062841    Top1 98.108632    
+2026-11-08 17:07:16,303 - ==> Top1: 98.109    Loss: 0.063
+
+2026-11-08 17:07:16,304 - ==> Confusion:
+[[2605   10   13   17]
+ [   4  412    6    0]
+ [  12    2  764    6]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:16,305 - ==> Best [Top1: 98.109   Params: 16112 on epoch: 18]
+2026-11-08 17:07:16,305 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:16,309 - 
+
+2026-11-08 17:07:16,309 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:18,725 - Epoch: [19][  100/  146]    Overall Loss 0.046381    Objective Loss 0.046381                                        LR 0.001000    Time 0.024119    
+2026-11-08 17:07:19,589 - Epoch: [19][  146/  146]    Overall Loss 0.048171    Objective Loss 0.048171    Top1 98.449612    LR 0.001000    Time 0.022425    
+2026-11-08 17:07:19,619 - --- validate (epoch=19)-----------
+2026-11-08 17:07:19,619 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:19,906 - Epoch: [19][   17/   17]    Loss 0.063541    Top1 97.890398    
+2026-11-08 17:07:19,930 - ==> Top1: 97.890    Loss: 0.064
+
+2026-11-08 17:07:19,930 - ==> Confusion:
+[[2623    6    8    8]
+ [  23  390    9    0]
+ [  15    2  761    6]
+ [   7    0    3  263]]
+
+2026-11-08 17:07:19,931 - ==> Best [Top1: 98.109   Params: 16112 on epoch: 18]
+2026-11-08 17:07:19,932 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:19,935 - 
+
+2026-11-08 17:07:19,935 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:22,080 - Epoch: [20][  100/  146]    Overall Loss 0.043683    Objective Loss 0.043683                                        LR 0.000300    Time 0.021405    
+2026-11-08 17:07:22,961 - Epoch: [20][  146/  146]    Overall Loss 0.042676    Objective Loss 0.042676    Top1 99.612403    LR 0.000300    Time 0.020680    
+2026-11-08 17:07:22,979 - --- validate (epoch=20)-----------
+2026-11-08 17:07:22,979 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:23,271 - Epoch: [20][   17/   17]    Loss 0.055107    Top1 98.060136    
+2026-11-08 17:07:23,292 - ==> Top1: 98.060    Loss: 0.055
+
+2026-11-08 17:07:23,292 - ==> Confusion:
+[[2611    8   12   14]
+ [   7  405   10    0]
+ [  14    2  763    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:23,293 - ==> Best [Top1: 98.109   Params: 16112 on epoch: 18]
+2026-11-08 17:07:23,294 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:23,297 - 
+
+2026-11-08 17:07:23,297 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:25,533 - Epoch: [21][  100/  146]    Overall Loss 0.041068    Objective Loss 0.041068                                        LR 0.000300    Time 0.022321    
+2026-11-08 17:07:26,398 - Epoch: [21][  146/  146]    Overall Loss 0.040688    Objective Loss 0.040688    Top1 99.224806    LR 0.000300    Time 0.021197    
+2026-11-08 17:07:26,423 - --- validate (epoch=21)-----------
+2026-11-08 17:07:26,424 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:26,729 - Epoch: [21][   17/   17]    Loss 0.064489    Top1 98.108632    
+2026-11-08 17:07:26,748 - ==> Top1: 98.109    Loss: 0.064
+
+2026-11-08 17:07:26,748 - ==> Confusion:
+[[2613    8    9   15]
+ [   5  407   10    0]
+ [  15    3  761    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:26,749 - ==> Best [Top1: 98.109   Params: 16112 on epoch: 21]
+2026-11-08 17:07:26,749 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:26,753 - 
+
+2026-11-08 17:07:26,753 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:29,184 - Epoch: [22][  100/  146]    Overall Loss 0.041216    Objective Loss 0.041216                                        LR 0.000300    Time 0.024268    
+2026-11-08 17:07:30,058 - Epoch: [22][  146/  146]    Overall Loss 0.039873    Objective Loss 0.039873    Top1 96.899225    LR 0.000300    Time 0.022596    
+2026-11-08 17:07:30,082 - --- validate (epoch=22)-----------
+2026-11-08 17:07:30,082 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:30,369 - Epoch: [22][   17/   17]    Loss 0.052209    Top1 98.205626    
+2026-11-08 17:07:30,387 - ==> Top1: 98.206    Loss: 0.052
+
+2026-11-08 17:07:30,387 - ==> Confusion:
+[[2610   11   11   13]
+ [   4  408   10    0]
+ [  10    2  767    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:30,389 - ==> Best [Top1: 98.206   Params: 16112 on epoch: 22]
+2026-11-08 17:07:30,389 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:30,392 - 
+
+2026-11-08 17:07:30,392 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:32,585 - Epoch: [23][  100/  146]    Overall Loss 0.040094    Objective Loss 0.040094                                        LR 0.000300    Time 0.021879    
+2026-11-08 17:07:33,470 - Epoch: [23][  146/  146]    Overall Loss 0.039011    Objective Loss 0.039011    Top1 98.449612    LR 0.000300    Time 0.021037    
+2026-11-08 17:07:33,495 - --- validate (epoch=23)-----------
+2026-11-08 17:07:33,495 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:33,792 - Epoch: [23][   17/   17]    Loss 0.051962    Top1 98.229874    
+2026-11-08 17:07:33,808 - ==> Top1: 98.230    Loss: 0.052
+
+2026-11-08 17:07:33,809 - ==> Confusion:
+[[2617    9    7   12]
+ [   5  408    9    0]
+ [  15    2  761    6]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:33,810 - ==> Best [Top1: 98.230   Params: 16112 on epoch: 23]
+2026-11-08 17:07:33,810 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:33,813 - 
+
+2026-11-08 17:07:33,813 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:35,939 - Epoch: [24][  100/  146]    Overall Loss 0.038734    Objective Loss 0.038734                                        LR 0.000300    Time 0.021216    
+2026-11-08 17:07:37,008 - Epoch: [24][  146/  146]    Overall Loss 0.038493    Objective Loss 0.038493    Top1 98.449612    LR 0.000300    Time 0.021832    
+2026-11-08 17:07:37,031 - --- validate (epoch=24)-----------
+2026-11-08 17:07:37,032 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:37,331 - Epoch: [24][   17/   17]    Loss 0.051722    Top1 98.399612    
+2026-11-08 17:07:37,352 - ==> Top1: 98.400    Loss: 0.052
+
+2026-11-08 17:07:37,352 - ==> Confusion:
+[[2621    9    8    7]
+ [   5  407   10    0]
+ [  12    2  765    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:37,354 - ==> Best [Top1: 98.400   Params: 16112 on epoch: 24]
+2026-11-08 17:07:37,354 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_checkpoint.pth.tar
+2026-11-08 17:07:37,358 - Initiating quantization aware training (QAT)...
+2026-11-08 17:07:37,359 - Collecting statistics for quantization aware training (QAT)...
+2026-11-08 17:07:39,961 - 
+
+2026-11-08 17:07:39,961 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:43,304 - Epoch: [25][  100/  146]    Overall Loss 0.039357    Objective Loss 0.039357                                        LR 0.000300    Time 0.033385    
+2026-11-08 17:07:44,484 - Epoch: [25][  146/  146]    Overall Loss 0.038712    Objective Loss 0.038712    Top1 99.612403    LR 0.000300    Time 0.030933    
+2026-11-08 17:07:44,513 - --- validate (epoch=25)-----------
+2026-11-08 17:07:44,514 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:44,922 - Epoch: [25][   17/   17]    Loss 0.050070    Top1 98.569350    
+2026-11-08 17:07:44,939 - ==> Top1: 98.569    Loss: 0.050
+
+2026-11-08 17:07:44,939 - ==> Confusion:
+[[2626    8    4    7]
+ [   4  410    8    0]
+ [  10    2  766    6]
+ [   7    0    3  263]]
+
+2026-11-08 17:07:44,940 - ==> Best [Top1: 98.569   Params: 16112 on epoch: 25]
+2026-11-08 17:07:44,941 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:07:44,944 - 
+
+2026-11-08 17:07:44,944 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:48,526 - Epoch: [26][  100/  146]    Overall Loss 0.036974    Objective Loss 0.036974                                        LR 0.000300    Time 0.035757    
+2026-11-08 17:07:49,858 - Epoch: [26][  146/  146]    Overall Loss 0.038407    Objective Loss 0.038407    Top1 98.449612    LR 0.000300    Time 0.033600    
+2026-11-08 17:07:49,878 - --- validate (epoch=26)-----------
+2026-11-08 17:07:49,879 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:50,280 - Epoch: [26][   17/   17]    Loss 0.049389    Top1 98.375364    
+2026-11-08 17:07:50,297 - ==> Top1: 98.375    Loss: 0.049
+
+2026-11-08 17:07:50,298 - ==> Confusion:
+[[2621    7   10    7]
+ [   6  409    7    0]
+ [  14    2  764    4]
+ [   5    0    5  263]]
+
+2026-11-08 17:07:50,299 - ==> Best [Top1: 98.569   Params: 16112 on epoch: 25]
+2026-11-08 17:07:50,299 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:07:50,303 - 
+
+2026-11-08 17:07:50,303 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:53,273 - Epoch: [27][  100/  146]    Overall Loss 0.035329    Objective Loss 0.035329                                        LR 0.000300    Time 0.029649    
+2026-11-08 17:07:54,514 - Epoch: [27][  146/  146]    Overall Loss 0.037118    Objective Loss 0.037118    Top1 99.224806    LR 0.000300    Time 0.028792    
+2026-11-08 17:07:54,535 - --- validate (epoch=27)-----------
+2026-11-08 17:07:54,535 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:54,915 - Epoch: [27][   17/   17]    Loss 0.049014    Top1 98.181377    
+2026-11-08 17:07:54,936 - ==> Top1: 98.181    Loss: 0.049
+
+2026-11-08 17:07:54,937 - ==> Confusion:
+[[2615    7   12   11]
+ [   8  404   10    0]
+ [  13    1  765    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:07:54,938 - ==> Best [Top1: 98.569   Params: 16112 on epoch: 25]
+2026-11-08 17:07:54,938 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:07:54,941 - 
+
+2026-11-08 17:07:54,942 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:07:58,237 - Epoch: [28][  100/  146]    Overall Loss 0.037387    Objective Loss 0.037387                                        LR 0.000300    Time 0.032906    
+2026-11-08 17:07:59,459 - Epoch: [28][  146/  146]    Overall Loss 0.036205    Objective Loss 0.036205    Top1 98.449612    LR 0.000300    Time 0.030894    
+2026-11-08 17:07:59,492 - --- validate (epoch=28)-----------
+2026-11-08 17:07:59,492 - 4124 samples (256 per mini-batch)
+2026-11-08 17:07:59,882 - Epoch: [28][   17/   17]    Loss 0.050313    Top1 98.423860    
+2026-11-08 17:07:59,901 - ==> Top1: 98.424    Loss: 0.050
+
+2026-11-08 17:07:59,901 - ==> Confusion:
+[[2620    9    9    7]
+ [   2  412    8    0]
+ [  11    3  765    5]
+ [   8    0    3  262]]
+
+2026-11-08 17:07:59,902 - ==> Best [Top1: 98.569   Params: 16112 on epoch: 25]
+2026-11-08 17:07:59,902 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:07:59,906 - 
+
+2026-11-08 17:07:59,906 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:02,945 - Epoch: [29][  100/  146]    Overall Loss 0.034661    Objective Loss 0.034661                                        LR 0.000300    Time 0.030347    
+2026-11-08 17:08:04,169 - Epoch: [29][  146/  146]    Overall Loss 0.035343    Objective Loss 0.035343    Top1 98.062016    LR 0.000300    Time 0.029159    
+2026-11-08 17:08:04,193 - --- validate (epoch=29)-----------
+2026-11-08 17:08:04,193 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:04,602 - Epoch: [29][   17/   17]    Loss 0.049113    Top1 98.084384    
+2026-11-08 17:08:04,620 - ==> Top1: 98.084    Loss: 0.049
+
+2026-11-08 17:08:04,620 - ==> Confusion:
+[[2603   12   12   18]
+ [   6  412    4    0]
+ [   9    3  764    8]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:04,621 - ==> Best [Top1: 98.569   Params: 16112 on epoch: 25]
+2026-11-08 17:08:04,621 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:04,624 - 
+
+2026-11-08 17:08:04,624 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:07,672 - Epoch: [30][  100/  146]    Overall Loss 0.035405    Objective Loss 0.035405                                        LR 0.000300    Time 0.030437    
+2026-11-08 17:08:08,874 - Epoch: [30][  146/  146]    Overall Loss 0.034978    Objective Loss 0.034978    Top1 98.449612    LR 0.000300    Time 0.029062    
+2026-11-08 17:08:08,897 - --- validate (epoch=30)-----------
+2026-11-08 17:08:08,898 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:09,299 - Epoch: [30][   17/   17]    Loss 0.045637    Top1 98.593598    
+2026-11-08 17:08:09,316 - ==> Top1: 98.594    Loss: 0.046
+
+2026-11-08 17:08:09,316 - ==> Confusion:
+[[2626    8    5    6]
+ [   2  415    5    0]
+ [  11    3  762    8]
+ [   8    0    2  263]]
+
+2026-11-08 17:08:09,318 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:09,318 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:09,322 - 
+
+2026-11-08 17:08:09,322 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:12,622 - Epoch: [31][  100/  146]    Overall Loss 0.032476    Objective Loss 0.032476                                        LR 0.000300    Time 0.032960    
+2026-11-08 17:08:13,874 - Epoch: [31][  146/  146]    Overall Loss 0.034299    Objective Loss 0.034299    Top1 99.612403    LR 0.000300    Time 0.031135    
+2026-11-08 17:08:13,903 - --- validate (epoch=31)-----------
+2026-11-08 17:08:13,903 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:14,294 - Epoch: [31][   17/   17]    Loss 0.048245    Top1 98.375364    
+2026-11-08 17:08:14,315 - ==> Top1: 98.375    Loss: 0.048
+
+2026-11-08 17:08:14,316 - ==> Confusion:
+[[2610   11   11   13]
+ [   1  411   10    0]
+ [   9    1  770    4]
+ [   2    0    5  266]]
+
+2026-11-08 17:08:14,316 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:14,317 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:14,320 - 
+
+2026-11-08 17:08:14,320 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:17,259 - Epoch: [32][  100/  146]    Overall Loss 0.033554    Objective Loss 0.033554                                        LR 0.000300    Time 0.029349    
+2026-11-08 17:08:18,478 - Epoch: [32][  146/  146]    Overall Loss 0.033640    Objective Loss 0.033640    Top1 98.062016    LR 0.000300    Time 0.028435    
+2026-11-08 17:08:18,502 - --- validate (epoch=32)-----------
+2026-11-08 17:08:18,502 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:18,884 - Epoch: [32][   17/   17]    Loss 0.047979    Top1 98.545102    
+2026-11-08 17:08:18,904 - ==> Top1: 98.545    Loss: 0.048
+
+2026-11-08 17:08:18,904 - ==> Confusion:
+[[2625    8    6    6]
+ [   1  416    5    0]
+ [  15    2  762    5]
+ [   8    0    4  261]]
+
+2026-11-08 17:08:18,914 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:18,914 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:18,917 - 
+
+2026-11-08 17:08:18,917 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:21,930 - Epoch: [33][  100/  146]    Overall Loss 0.033520    Objective Loss 0.033520                                        LR 0.000300    Time 0.030081    
+2026-11-08 17:08:23,137 - Epoch: [33][  146/  146]    Overall Loss 0.033036    Objective Loss 0.033036    Top1 99.224806    LR 0.000300    Time 0.028858    
+2026-11-08 17:08:23,154 - --- validate (epoch=33)-----------
+2026-11-08 17:08:23,154 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:23,538 - Epoch: [33][   17/   17]    Loss 0.041503    Top1 98.399612    
+2026-11-08 17:08:23,560 - ==> Top1: 98.400    Loss: 0.042
+
+2026-11-08 17:08:23,560 - ==> Confusion:
+[[2615    8   13    9]
+ [   4  410    8    0]
+ [  10    1  770    3]
+ [   5    0    5  263]]
+
+2026-11-08 17:08:23,561 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:23,561 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:23,564 - 
+
+2026-11-08 17:08:23,565 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:26,893 - Epoch: [34][  100/  146]    Overall Loss 0.032030    Objective Loss 0.032030                                        LR 0.000300    Time 0.033241    
+2026-11-08 17:08:28,131 - Epoch: [34][  146/  146]    Overall Loss 0.031940    Objective Loss 0.031940    Top1 99.224806    LR 0.000300    Time 0.031234    
+2026-11-08 17:08:28,154 - --- validate (epoch=34)-----------
+2026-11-08 17:08:28,155 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:28,528 - Epoch: [34][   17/   17]    Loss 0.045703    Top1 98.545102    
+2026-11-08 17:08:28,554 - ==> Top1: 98.545    Loss: 0.046
+
+2026-11-08 17:08:28,555 - ==> Confusion:
+[[2626    6    6    7]
+ [   6  410    6    0]
+ [  14    1  763    6]
+ [   6    0    2  265]]
+
+2026-11-08 17:08:28,556 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:28,556 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:28,559 - 
+
+2026-11-08 17:08:28,559 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:31,623 - Epoch: [35][  100/  146]    Overall Loss 0.030760    Objective Loss 0.030760                                        LR 0.000090    Time 0.030595    
+2026-11-08 17:08:32,938 - Epoch: [35][  146/  146]    Overall Loss 0.029643    Objective Loss 0.029643    Top1 98.062016    LR 0.000090    Time 0.029952    
+2026-11-08 17:08:32,956 - --- validate (epoch=35)-----------
+2026-11-08 17:08:32,956 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:33,324 - Epoch: [35][   17/   17]    Loss 0.041909    Top1 98.423860    
+2026-11-08 17:08:33,343 - ==> Top1: 98.424    Loss: 0.042
+
+2026-11-08 17:08:33,343 - ==> Confusion:
+[[2618    7    7   13]
+ [   5  407   10    0]
+ [  10    1  768    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:33,344 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:33,344 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:33,347 - 
+
+2026-11-08 17:08:33,347 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:36,177 - Epoch: [36][  100/  146]    Overall Loss 0.030293    Objective Loss 0.030293                                        LR 0.000090    Time 0.028260    
+2026-11-08 17:08:37,427 - Epoch: [36][  146/  146]    Overall Loss 0.029304    Objective Loss 0.029304    Top1 98.062016    LR 0.000090    Time 0.027907    
+2026-11-08 17:08:37,446 - --- validate (epoch=36)-----------
+2026-11-08 17:08:37,446 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:37,832 - Epoch: [36][   17/   17]    Loss 0.041471    Top1 98.423860    
+2026-11-08 17:08:37,854 - ==> Top1: 98.424    Loss: 0.041
+
+2026-11-08 17:08:37,854 - ==> Confusion:
+[[2618    8    6   13]
+ [   5  412    5    0]
+ [  13    2  763    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:37,855 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:37,855 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:37,858 - 
+
+2026-11-08 17:08:37,858 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:40,914 - Epoch: [37][  100/  146]    Overall Loss 0.028780    Objective Loss 0.028780                                        LR 0.000090    Time 0.030514    
+2026-11-08 17:08:42,164 - Epoch: [37][  146/  146]    Overall Loss 0.029113    Objective Loss 0.029113    Top1 99.224806    LR 0.000090    Time 0.029445    
+2026-11-08 17:08:42,192 - --- validate (epoch=37)-----------
+2026-11-08 17:08:42,192 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:42,567 - Epoch: [37][   17/   17]    Loss 0.041008    Top1 98.520854    
+2026-11-08 17:08:42,584 - ==> Top1: 98.521    Loss: 0.041
+
+2026-11-08 17:08:42,584 - ==> Confusion:
+[[2616    8    8   13]
+ [   1  417    4    0]
+ [  13    1  764    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:42,585 - ==> Best [Top1: 98.594   Params: 16112 on epoch: 30]
+2026-11-08 17:08:42,586 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:42,588 - 
+
+2026-11-08 17:08:42,589 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:45,905 - Epoch: [38][  100/  146]    Overall Loss 0.029379    Objective Loss 0.029379                                        LR 0.000090    Time 0.033119    
+2026-11-08 17:08:47,151 - Epoch: [38][  146/  146]    Overall Loss 0.028608    Objective Loss 0.028608    Top1 99.612403    LR 0.000090    Time 0.031205    
+2026-11-08 17:08:47,176 - --- validate (epoch=38)-----------
+2026-11-08 17:08:47,176 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:47,564 - Epoch: [38][   17/   17]    Loss 0.038970    Top1 98.690592    
+2026-11-08 17:08:47,581 - ==> Top1: 98.691    Loss: 0.039
+
+2026-11-08 17:08:47,582 - ==> Confusion:
+[[2625    7    7    6]
+ [   2  415    5    0]
+ [  10    1  767    6]
+ [   7    0    3  263]]
+
+2026-11-08 17:08:47,583 - ==> Best [Top1: 98.691   Params: 16112 on epoch: 38]
+2026-11-08 17:08:47,583 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:47,587 - 
+
+2026-11-08 17:08:47,587 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:50,630 - Epoch: [39][  100/  146]    Overall Loss 0.029063    Objective Loss 0.029063                                        LR 0.000090    Time 0.030385    
+2026-11-08 17:08:51,902 - Epoch: [39][  146/  146]    Overall Loss 0.028454    Objective Loss 0.028454    Top1 96.899225    LR 0.000090    Time 0.029508    
+2026-11-08 17:08:51,920 - --- validate (epoch=39)-----------
+2026-11-08 17:08:51,920 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:52,358 - Epoch: [39][   17/   17]    Loss 0.041357    Top1 98.569350    
+2026-11-08 17:08:52,377 - ==> Top1: 98.569    Loss: 0.041
+
+2026-11-08 17:08:52,377 - ==> Confusion:
+[[2617    8    8   12]
+ [   1  416    5    0]
+ [  10    2  766    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:52,378 - ==> Best [Top1: 98.691   Params: 16112 on epoch: 38]
+2026-11-08 17:08:52,378 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:52,381 - 
+
+2026-11-08 17:08:52,382 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:08:55,804 - Epoch: [40][  100/  146]    Overall Loss 0.027856    Objective Loss 0.027856                                        LR 0.000090    Time 0.034170    
+2026-11-08 17:08:57,245 - Epoch: [40][  146/  146]    Overall Loss 0.027943    Objective Loss 0.027943    Top1 98.837209    LR 0.000090    Time 0.033259    
+2026-11-08 17:08:57,268 - --- validate (epoch=40)-----------
+2026-11-08 17:08:57,268 - 4124 samples (256 per mini-batch)
+2026-11-08 17:08:57,635 - Epoch: [40][   17/   17]    Loss 0.040175    Top1 98.569350    
+2026-11-08 17:08:57,652 - ==> Top1: 98.569    Loss: 0.040
+
+2026-11-08 17:08:57,652 - ==> Confusion:
+[[2624    7    6    8]
+ [   6  408    8    0]
+ [  10    1  767    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:08:57,653 - ==> Best [Top1: 98.691   Params: 16112 on epoch: 38]
+2026-11-08 17:08:57,653 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:08:57,656 - 
+
+2026-11-08 17:08:57,657 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:00,919 - Epoch: [41][  100/  146]    Overall Loss 0.028430    Objective Loss 0.028430                                        LR 0.000090    Time 0.032585    
+2026-11-08 17:09:02,115 - Epoch: [41][  146/  146]    Overall Loss 0.028085    Objective Loss 0.028085    Top1 99.612403    LR 0.000090    Time 0.030493    
+2026-11-08 17:09:02,138 - --- validate (epoch=41)-----------
+2026-11-08 17:09:02,138 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:02,547 - Epoch: [41][   17/   17]    Loss 0.039236    Top1 98.642095    
+2026-11-08 17:09:02,571 - ==> Top1: 98.642    Loss: 0.039
+
+2026-11-08 17:09:02,571 - ==> Confusion:
+[[2626    8    5    6]
+ [   4  413    5    0]
+ [  14    1  763    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:02,572 - ==> Best [Top1: 98.691   Params: 16112 on epoch: 38]
+2026-11-08 17:09:02,572 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:02,575 - 
+
+2026-11-08 17:09:02,575 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:05,588 - Epoch: [42][  100/  146]    Overall Loss 0.029319    Objective Loss 0.029319                                        LR 0.000090    Time 0.030086    
+2026-11-08 17:09:06,818 - Epoch: [42][  146/  146]    Overall Loss 0.028035    Objective Loss 0.028035    Top1 99.612403    LR 0.000090    Time 0.029011    
+2026-11-08 17:09:06,840 - --- validate (epoch=42)-----------
+2026-11-08 17:09:06,840 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:07,217 - Epoch: [42][   17/   17]    Loss 0.041034    Top1 98.569350    
+2026-11-08 17:09:07,234 - ==> Top1: 98.569    Loss: 0.041
+
+2026-11-08 17:09:07,235 - ==> Confusion:
+[[2619    7    8   11]
+ [   1  413    8    0]
+ [  10    1  767    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:07,236 - ==> Best [Top1: 98.691   Params: 16112 on epoch: 38]
+2026-11-08 17:09:07,236 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:07,239 - 
+
+2026-11-08 17:09:07,241 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:10,265 - Epoch: [43][  100/  146]    Overall Loss 0.029076    Objective Loss 0.029076                                        LR 0.000090    Time 0.030202    
+2026-11-08 17:09:11,502 - Epoch: [43][  146/  146]    Overall Loss 0.027976    Objective Loss 0.027976    Top1 99.224806    LR 0.000090    Time 0.029139    
+2026-11-08 17:09:11,528 - --- validate (epoch=43)-----------
+2026-11-08 17:09:11,529 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:11,923 - Epoch: [43][   17/   17]    Loss 0.037475    Top1 98.739088    
+2026-11-08 17:09:11,942 - ==> Top1: 98.739    Loss: 0.037
+
+2026-11-08 17:09:11,942 - ==> Confusion:
+[[2622    7    6   10]
+ [   1  416    5    0]
+ [  10    1  768    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:11,943 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:11,943 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:11,947 - 
+
+2026-11-08 17:09:11,947 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:15,251 - Epoch: [44][  100/  146]    Overall Loss 0.026649    Objective Loss 0.026649                                        LR 0.000090    Time 0.033003    
+2026-11-08 17:09:16,469 - Epoch: [44][  146/  146]    Overall Loss 0.027488    Objective Loss 0.027488    Top1 100.000000    LR 0.000090    Time 0.030929    
+2026-11-08 17:09:16,493 - --- validate (epoch=44)-----------
+2026-11-08 17:09:16,493 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:16,874 - Epoch: [44][   17/   17]    Loss 0.039809    Top1 98.690592    
+2026-11-08 17:09:16,897 - ==> Top1: 98.691    Loss: 0.040
+
+2026-11-08 17:09:16,897 - ==> Confusion:
+[[2621    8   10    6]
+ [   1  416    5    0]
+ [   9    2  768    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:09:16,900 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:16,900 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:16,903 - 
+
+2026-11-08 17:09:16,903 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:19,905 - Epoch: [45][  100/  146]    Overall Loss 0.027002    Objective Loss 0.027002                                        LR 0.000027    Time 0.029979    
+2026-11-08 17:09:21,113 - Epoch: [45][  146/  146]    Overall Loss 0.026793    Objective Loss 0.026793    Top1 99.612403    LR 0.000027    Time 0.028788    
+2026-11-08 17:09:21,135 - --- validate (epoch=45)-----------
+2026-11-08 17:09:21,135 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:21,547 - Epoch: [45][   17/   17]    Loss 0.039003    Top1 98.617847    
+2026-11-08 17:09:21,568 - ==> Top1: 98.618    Loss: 0.039
+
+2026-11-08 17:09:21,569 - ==> Confusion:
+[[2618    8    7   12]
+ [   1  417    4    0]
+ [  10    2  766    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:21,570 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:21,570 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:21,573 - 
+
+2026-11-08 17:09:21,573 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:24,623 - Epoch: [46][  100/  146]    Overall Loss 0.028352    Objective Loss 0.028352                                        LR 0.000027    Time 0.030457    
+2026-11-08 17:09:25,885 - Epoch: [46][  146/  146]    Overall Loss 0.026806    Objective Loss 0.026806    Top1 99.612403    LR 0.000027    Time 0.029488    
+2026-11-08 17:09:25,907 - --- validate (epoch=46)-----------
+2026-11-08 17:09:25,907 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:26,273 - Epoch: [46][   17/   17]    Loss 0.041980    Top1 98.714840    
+2026-11-08 17:09:26,293 - ==> Top1: 98.715    Loss: 0.042
+
+2026-11-08 17:09:26,293 - ==> Confusion:
+[[2620    9    5   11]
+ [   1  417    4    0]
+ [   9    1  768    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:26,294 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:26,294 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:26,297 - 
+
+2026-11-08 17:09:26,297 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:29,532 - Epoch: [47][  100/  146]    Overall Loss 0.027460    Objective Loss 0.027460                                        LR 0.000027    Time 0.032303    
+2026-11-08 17:09:30,800 - Epoch: [47][  146/  146]    Overall Loss 0.026876    Objective Loss 0.026876    Top1 99.612403    LR 0.000027    Time 0.030798    
+2026-11-08 17:09:30,823 - --- validate (epoch=47)-----------
+2026-11-08 17:09:30,823 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:31,181 - Epoch: [47][   17/   17]    Loss 0.037411    Top1 98.714840    
+2026-11-08 17:09:31,199 - ==> Top1: 98.715    Loss: 0.037
+
+2026-11-08 17:09:31,199 - ==> Confusion:
+[[2623    7    8    7]
+ [   1  413    8    0]
+ [   9    1  769    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:31,200 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:31,200 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:31,203 - 
+
+2026-11-08 17:09:31,203 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:34,295 - Epoch: [48][  100/  146]    Overall Loss 0.025111    Objective Loss 0.025111                                        LR 0.000027    Time 0.030876    
+2026-11-08 17:09:35,520 - Epoch: [48][  146/  146]    Overall Loss 0.026503    Objective Loss 0.026503    Top1 99.612403    LR 0.000027    Time 0.029523    
+2026-11-08 17:09:35,541 - --- validate (epoch=48)-----------
+2026-11-08 17:09:35,541 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:35,935 - Epoch: [48][   17/   17]    Loss 0.037265    Top1 98.617847    
+2026-11-08 17:09:35,956 - ==> Top1: 98.618    Loss: 0.037
+
+2026-11-08 17:09:35,957 - ==> Confusion:
+[[2616    8   10   11]
+ [   1  416    5    0]
+ [   9    1  769    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:35,957 - ==> Best [Top1: 98.739   Params: 16112 on epoch: 43]
+2026-11-08 17:09:35,958 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:35,961 - 
+
+2026-11-08 17:09:35,961 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:39,039 - Epoch: [49][  100/  146]    Overall Loss 0.025998    Objective Loss 0.025998                                        LR 0.000027    Time 0.030739    
+2026-11-08 17:09:40,295 - Epoch: [49][  146/  146]    Overall Loss 0.026381    Objective Loss 0.026381    Top1 99.224806    LR 0.000027    Time 0.029644    
+2026-11-08 17:09:40,313 - --- validate (epoch=49)-----------
+2026-11-08 17:09:40,313 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:40,677 - Epoch: [49][   17/   17]    Loss 0.037140    Top1 98.763337    
+2026-11-08 17:09:40,696 - ==> Top1: 98.763    Loss: 0.037
+
+2026-11-08 17:09:40,697 - ==> Confusion:
+[[2625    7    4    9]
+ [   2  415    5    0]
+ [  10    1  767    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:40,698 - ==> Best [Top1: 98.763   Params: 16112 on epoch: 49]
+2026-11-08 17:09:40,698 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:40,701 - 
+
+2026-11-08 17:09:40,702 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:43,634 - Epoch: [50][  100/  146]    Overall Loss 0.027431    Objective Loss 0.027431                                        LR 0.000027    Time 0.029280    
+2026-11-08 17:09:44,893 - Epoch: [50][  146/  146]    Overall Loss 0.026610    Objective Loss 0.026610    Top1 99.612403    LR 0.000027    Time 0.028664    
+2026-11-08 17:09:44,914 - --- validate (epoch=50)-----------
+2026-11-08 17:09:44,914 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:45,312 - Epoch: [50][   17/   17]    Loss 0.037694    Top1 98.714840    
+2026-11-08 17:09:45,332 - ==> Top1: 98.715    Loss: 0.038
+
+2026-11-08 17:09:45,332 - ==> Confusion:
+[[2621    7    8    9]
+ [   1  416    5    0]
+ [  10    1  768    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:45,333 - ==> Best [Top1: 98.763   Params: 16112 on epoch: 49]
+2026-11-08 17:09:45,334 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:45,337 - 
+
+2026-11-08 17:09:45,337 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:48,613 - Epoch: [51][  100/  146]    Overall Loss 0.026382    Objective Loss 0.026382                                        LR 0.000027    Time 0.032717    
+2026-11-08 17:09:49,908 - Epoch: [51][  146/  146]    Overall Loss 0.026394    Objective Loss 0.026394    Top1 100.000000    LR 0.000027    Time 0.031261    
+2026-11-08 17:09:49,933 - --- validate (epoch=51)-----------
+2026-11-08 17:09:49,933 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:50,294 - Epoch: [51][   17/   17]    Loss 0.037200    Top1 98.714840    
+2026-11-08 17:09:50,317 - ==> Top1: 98.715    Loss: 0.037
+
+2026-11-08 17:09:50,317 - ==> Confusion:
+[[2621    7    8    9]
+ [   1  416    5    0]
+ [   9    1  768    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:50,318 - ==> Best [Top1: 98.763   Params: 16112 on epoch: 49]
+2026-11-08 17:09:50,318 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:50,321 - 
+
+2026-11-08 17:09:50,322 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:53,352 - Epoch: [52][  100/  146]    Overall Loss 0.025396    Objective Loss 0.025396                                        LR 0.000027    Time 0.030262    
+2026-11-08 17:09:54,623 - Epoch: [52][  146/  146]    Overall Loss 0.026290    Objective Loss 0.026290    Top1 99.612403    LR 0.000027    Time 0.029420    
+2026-11-08 17:09:54,646 - --- validate (epoch=52)-----------
+2026-11-08 17:09:54,647 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:55,087 - Epoch: [52][   17/   17]    Loss 0.036489    Top1 98.690592    
+2026-11-08 17:09:55,104 - ==> Top1: 98.691    Loss: 0.036
+
+2026-11-08 17:09:55,104 - ==> Confusion:
+[[2623    7    6    9]
+ [   3  415    4    0]
+ [  10    2  766    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:55,106 - ==> Best [Top1: 98.763   Params: 16112 on epoch: 49]
+2026-11-08 17:09:55,106 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:55,109 - 
+
+2026-11-08 17:09:55,109 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:09:58,082 - Epoch: [53][  100/  146]    Overall Loss 0.025930    Objective Loss 0.025930                                        LR 0.000027    Time 0.029679    
+2026-11-08 17:09:59,291 - Epoch: [53][  146/  146]    Overall Loss 0.026078    Objective Loss 0.026078    Top1 100.000000    LR 0.000027    Time 0.028593    
+2026-11-08 17:09:59,313 - --- validate (epoch=53)-----------
+2026-11-08 17:09:59,313 - 4124 samples (256 per mini-batch)
+2026-11-08 17:09:59,652 - Epoch: [53][   17/   17]    Loss 0.037291    Top1 98.666343    
+2026-11-08 17:09:59,676 - ==> Top1: 98.666    Loss: 0.037
+
+2026-11-08 17:09:59,676 - ==> Confusion:
+[[2618    8    7   12]
+ [   1  417    4    0]
+ [   9    1  768    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:09:59,677 - ==> Best [Top1: 98.763   Params: 16112 on epoch: 49]
+2026-11-08 17:09:59,677 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:09:59,680 - 
+
+2026-11-08 17:09:59,681 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:03,018 - Epoch: [54][  100/  146]    Overall Loss 0.027471    Objective Loss 0.027471                                        LR 0.000027    Time 0.033328    
+2026-11-08 17:10:04,267 - Epoch: [54][  146/  146]    Overall Loss 0.026100    Objective Loss 0.026100    Top1 99.224806    LR 0.000027    Time 0.031373    
+2026-11-08 17:10:04,293 - --- validate (epoch=54)-----------
+2026-11-08 17:10:04,293 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:04,694 - Epoch: [54][   17/   17]    Loss 0.036327    Top1 98.836081    
+2026-11-08 17:10:04,711 - ==> Top1: 98.836    Loss: 0.036
+
+2026-11-08 17:10:04,712 - ==> Confusion:
+[[2625    7    6    7]
+ [   1  417    4    0]
+ [  10    1  768    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:10:04,713 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:04,713 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:04,717 - 
+
+2026-11-08 17:10:04,717 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:07,643 - Epoch: [55][  100/  146]    Overall Loss 0.025608    Objective Loss 0.025608                                        LR 0.000027    Time 0.029215    
+2026-11-08 17:10:08,892 - Epoch: [55][  146/  146]    Overall Loss 0.026098    Objective Loss 0.026098    Top1 99.612403    LR 0.000027    Time 0.028550    
+2026-11-08 17:10:08,914 - --- validate (epoch=55)-----------
+2026-11-08 17:10:08,915 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:09,321 - Epoch: [55][   17/   17]    Loss 0.037237    Top1 98.690592    
+2026-11-08 17:10:09,338 - ==> Top1: 98.691    Loss: 0.037
+
+2026-11-08 17:10:09,338 - ==> Confusion:
+[[2623    7    8    7]
+ [   2  414    6    0]
+ [  10    1  768    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:10:09,339 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:09,339 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:09,342 - 
+
+2026-11-08 17:10:09,342 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:12,326 - Epoch: [56][  100/  146]    Overall Loss 0.025855    Objective Loss 0.025855                                        LR 0.000027    Time 0.029794    
+2026-11-08 17:10:13,580 - Epoch: [56][  146/  146]    Overall Loss 0.026116    Objective Loss 0.026116    Top1 98.449612    LR 0.000027    Time 0.028984    
+2026-11-08 17:10:13,604 - --- validate (epoch=56)-----------
+2026-11-08 17:10:13,605 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:14,031 - Epoch: [56][   17/   17]    Loss 0.035520    Top1 98.739088    
+2026-11-08 17:10:14,057 - ==> Top1: 98.739    Loss: 0.036
+
+2026-11-08 17:10:14,057 - ==> Confusion:
+[[2621    7    8    9]
+ [   1  417    4    0]
+ [  10    1  768    5]
+ [   5    0    2  266]]
+
+2026-11-08 17:10:14,058 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:14,059 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:14,062 - 
+
+2026-11-08 17:10:14,063 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:17,551 - Epoch: [57][  100/  146]    Overall Loss 0.026782    Objective Loss 0.026782                                        LR 0.000027    Time 0.034831    
+2026-11-08 17:10:18,772 - Epoch: [57][  146/  146]    Overall Loss 0.026237    Objective Loss 0.026237    Top1 99.224806    LR 0.000027    Time 0.032202    
+2026-11-08 17:10:18,793 - --- validate (epoch=57)-----------
+2026-11-08 17:10:18,793 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:19,175 - Epoch: [57][   17/   17]    Loss 0.036182    Top1 98.714840    
+2026-11-08 17:10:19,194 - ==> Top1: 98.715    Loss: 0.036
+
+2026-11-08 17:10:19,195 - ==> Confusion:
+[[2621    8    8    8]
+ [   1  417    4    0]
+ [  10    1  767    6]
+ [   5    0    2  266]]
+
+2026-11-08 17:10:19,196 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:19,196 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:19,199 - 
+
+2026-11-08 17:10:19,199 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:22,938 - Epoch: [58][  100/  146]    Overall Loss 0.025965    Objective Loss 0.025965                                        LR 0.000027    Time 0.037333    
+2026-11-08 17:10:24,445 - Epoch: [58][  146/  146]    Overall Loss 0.026021    Objective Loss 0.026021    Top1 98.449612    LR 0.000027    Time 0.035870    
+2026-11-08 17:10:24,473 - --- validate (epoch=58)-----------
+2026-11-08 17:10:24,473 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:24,996 - Epoch: [58][   17/   17]    Loss 0.036387    Top1 98.763337    
+2026-11-08 17:10:25,026 - ==> Top1: 98.763    Loss: 0.036
+
+2026-11-08 17:10:25,027 - ==> Confusion:
+[[2623    7    8    7]
+ [   3  415    4    0]
+ [   9    1  770    4]
+ [   5    0    3  265]]
+
+2026-11-08 17:10:25,029 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:25,029 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:25,033 - 
+
+2026-11-08 17:10:25,033 - Training epoch: 37122 samples (256 per mini-batch, world size: 1)
+2026-11-08 17:10:28,175 - Epoch: [59][  100/  146]    Overall Loss 0.026303    Objective Loss 0.026303                                        LR 0.000027    Time 0.031377    
+2026-11-08 17:10:29,566 - Epoch: [59][  146/  146]    Overall Loss 0.026034    Objective Loss 0.026034    Top1 100.000000    LR 0.000027    Time 0.030996    
+2026-11-08 17:10:29,595 - --- validate (epoch=59)-----------
+2026-11-08 17:10:29,595 - 4124 samples (256 per mini-batch)
+2026-11-08 17:10:30,045 - Epoch: [59][   17/   17]    Loss 0.035689    Top1 98.763337    
+2026-11-08 17:10:30,064 - ==> Top1: 98.763    Loss: 0.036
+
+2026-11-08 17:10:30,066 - ==> Confusion:
+[[2624    7    6    8]
+ [   3  415    4    0]
+ [   9    1  769    5]
+ [   5    0    3  265]]
+
+2026-11-08 17:10:30,067 - ==> Best [Top1: 98.836   Params: 16112 on epoch: 54]
+2026-11-08 17:10:30,067 - Saving checkpoint to: logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_checkpoint.pth.tar
+2026-11-08 17:10:30,071 - --- test (ckpt) ---------------------
+2026-11-08 17:10:30,071 - 9763 samples (256 per mini-batch)
+2026-11-08 17:10:30,952 - Test: [   39/   39]    Loss 0.478380    Top1 90.310355    
+2026-11-08 17:10:30,977 - ==> Top1: 90.310    Loss: 0.478
+
+2026-11-08 17:10:30,977 - ==> Confusion:
+[[8483   50   50  205]
+ [  66   14  103   23]
+ [ 231  178  320   13]
+ [  25    0    2    0]]
+
+2026-11-08 17:10:30,977 - --- test (best) ---------------------
+2026-11-08 17:10:30,978 - => loading checkpoint logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_best.pth.tar
+2026-11-08 17:10:30,983 - => Checkpoint contents:
++----------------------+-------------+------------+
+| Key                  | Type        | Value      |
+|----------------------+-------------+------------|
+| arch                 | str         | ai87ecgnet |
+| compression_sched    | dict        |            |
+| epoch                | int         | 54         |
+| extras               | dict        |            |
+| optimizer_state_dict | dict        |            |
+| optimizer_type       | type        | Adam       |
+| state_dict           | OrderedDict |            |
++----------------------+-------------+------------+
+
+2026-11-08 17:10:30,983 - => Checkpoint['extras'] contents:
++--------------+--------+---------+
+| Key          | Type   |   Value |
+|--------------+--------+---------|
+| best_epoch   | int    | 54      |
+| best_mAP     | int    |  0      |
+| best_top1    | float  | 98.8361 |
+| current_mAP  | int    |  0      |
+| current_top1 | float  | 98.8361 |
++--------------+--------+---------+
+
+2026-11-08 17:10:30,984 - Loaded compression schedule from checkpoint (epoch 54)
+2026-11-08 17:10:30,986 - => loaded 'state_dict' from checkpoint 'logs/ecg_rr___2026.11.08-170558/ecg_rr_qat_best.pth.tar'
+2026-11-08 17:10:30,986 - 9763 samples (256 per mini-batch)
+2026-11-08 17:10:31,817 - Test: [   39/   39]    Loss 0.473193    Top1 90.218171    
+2026-11-08 17:10:31,840 - ==> Top1: 90.218    Loss: 0.473
+
+2026-11-08 17:10:31,840 - ==> Confusion:
+[[8486   57   50  195]
+ [  67   15  101   23]
+ [ 239  186  307   10]
+ [  25    0    2    0]]
+
+2026-11-08 17:10:31,842 - 
+2026-11-08 17:10:31,843 - Log file for this run: /home/david/ai8x/ai8x-training/logs/ecg_rr___2026.11.08-170558/ecg_rr___2026.11.08-170558.log
